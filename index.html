@@ -620,8 +620,16 @@ pre .xml .cdata {
   String message = <span class="string">"Please go to "</span> + resetUrl + <span class="string">" and enter a new password"</span>;
   Mail.send(email, message)
 }</code></pre>
-<pre><code>POST /reset-password HTTP/1.1
-Host: myattackdomain.com</code></pre>
+<pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
+<span class="attribute">Host</span>: <span class="string">myattackdomain.com</span></code></pre>
+<pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
+<span class="attribute">Host</span>: <span class="string">valid-domain.com</span>
+<span class="attribute">Host</span>: <span class="string">myattackdomain.com</span></code></pre>
+<pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
+<span class="attribute">Host</span>: <span class="string">valid-domain.com:@myattackdomain.com</span></code></pre>
+<pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
+<span class="attribute">Host</span>: <span class="string">valid-domain.com</span>
+<span class="attribute">X-Forwarded-Host</span>: <span class="string">myattackdomain.com</span></code></pre>
 <pre><code class="lang-java">String message = <span class="string">"Please go to http://myattackdomain.com/new-password and enter a new password"</span>;</code></pre>
 </section>
   </div>
@@ -632,37 +640,70 @@ Host: myattackdomain.com</code></pre>
 <pre><code class="lang-java">Collection&lt;String&gt; validDomains = Arrays.asList(<span class="string">"myshopdomain.com"</span>, <span class="string">"192.168.0.1"</span>);
 
 validDomains.stream()
-  .filter(allowedDomain -&gt; request.getRequestURL().startsWith(allowedDomain))
+  .filter(allowedDomain -&gt; request.getServerName().equals(allowedDomain))
   .findAny()
   .orThrow(<span class="keyword">new</span> HttpForbiddenException());</code></pre>
 <p><strong>PHP</strong>:</p>
 <pre><code class="lang-php"><span class="variable">$validDomains</span> = [<span class="string">"myshopdomain.com"</span>, <span class="string">"192.168.0.1"</span>];
 
-<span class="keyword">if</span> (count(array_filter(<span class="variable">$validDomains</span>, <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
-  <span class="keyword">return</span> strpos(<span class="variable">$_SERVER</span>[<span class="string">'HTTP_HOST'</span>], <span class="variable">$validDomains</span>) === <span class="number">0</span>;
+<span class="keyword">if</span> (count(array_filter(<span class="variable">$validDomains</span>, <span class="function"><span class="keyword">function</span> <span class="params">(<span class="variable">$validDomain</span>)</span> {</span>
+  <span class="keyword">return</span> <span class="variable">$_SERVER</span>[<span class="string">'HTTP_HOST'</span>] === <span class="variable">$validDomain</span>;
 })) === <span class="number">0</span>) {
   <span class="keyword">throw</span> <span class="keyword">new</span> HttpForbiddenException();
 }</code></pre>
 </section>
   </div>
   <div class="slide hidden" id="slide-13">
-    <section class="slide-content"><h3 id="cache-poisoning">Cache Poisoning</h3>
-<p><a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html">http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html</a></p>
+    <section class="slide-content"><h3 id="cache-poisoning-attack">Cache Poisoning Attack</h3>
+<p><strong>Similar to Host Header Poisoning</strong></p>
+<p>Joomla used to generate HTML templates with absolute URLs:</p>
+<pre><code>GET / HTTP/1.1
+Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
+<pre><code class="lang-xml"><span class="tag">&lt;<span class="title">link</span> <span class="attribute">href</span>=<span class="value">"http://cow"</span><span class="attribute">onerror</span>=<span class="value">'alert(1)'</span><span class="attribute">rel</span>=<span class="value">'stylesheet'</span>/" <span class="attribute">rel</span>=<span class="value">"canonical"</span>/&gt;</span></code></pre>
 </section>
   </div>
   <div class="slide hidden" id="slide-14">
-    <section class="slide-content"><h3 id="unvalidated-redirects">Unvalidated Redirects</h3>
+    <section class="slide-content"><h3 id="cache-poisoning-prevention">Cache Poisoning Prevention</h3>
+<p><strong>Depends on your Cache Setup</strong></p>
+<p>More information on <a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html"><a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html">http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html</a></a></p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-15">
+    <section class="slide-content"><h3 id="unvalidated-redirects-vulnerability">Unvalidated Redirects Vulnerability</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
   <span class="keyword">return</span> <span class="string">"redirect:"</span> + toUrl;
 }</code></pre>
-<ul>
-<li><strong>GET</strong> /redirect?toUrl=<a href="http://myfakeshop.com">http://myfakeshop.com</a></li>
-</ul>
-<pre><code class="lang-java"><span class="keyword">if</span> (toUrl.startsWith(<span class="string">"https://known.com"</span>))</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-15">
+  <div class="slide hidden" id="slide-16">
+    <section class="slide-content"><h3 id="unvalidated-redirects-attack">Unvalidated Redirects Attack</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
+  <span class="keyword">return</span> <span class="string">"redirect:"</span> + toUrl;
+}</code></pre>
+<pre><code class="lang-http">GET /redirect?url=http://myfakeshop.com</code></pre>
+<pre><code class="lang-http">GET /redirect?url=http://valid-shop.com:@myfakeshop.com</code></pre>
+<pre><code class="lang-java"><span class="keyword">return</span> <span class="string">"redirect:http://valid-shop.com:@myfakeshop.com"</span>;</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-17">
+    <section class="slide-content"><h3 id="unvalidated-redirects-prevention">Unvalidated Redirects Prevention</h3>
+<p><strong>Java</strong>:</p>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
+  <span class="keyword">if</span> (toUrl.equals(<span class="string">"http://valid-domain.com/the/url"</span>)) {
+    <span class="keyword">return</span> <span class="string">"redirect:"</span> + toUrl;
+  }
+}</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="keyword">if</span> (<span class="variable">$_GET</span>[<span class="string">'url'</span>] === <span class="string">'http://valid-domain.com/the/url'</span>) {
+  header(<span class="string">'Location: '</span> . <span class="variable">$_GET</span>[<span class="string">'url'</span>]);
+  <span class="keyword">exit</span>;
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-18">
     <section class="slide-content"><h3 id="session-hijacking">Session hijacking</h3>
 <p>Generally covered by framework</p>
 <ul>
@@ -674,7 +715,7 @@ validDomains.stream()
 <p>More on <a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet"><a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet">https://www.owasp.org/index.php/Session_Management_Cheat_Sheet</a></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-16">
+  <div class="slide hidden" id="slide-19">
     <section class="slide-content"><h3 id="xxe">XXE</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
@@ -688,7 +729,7 @@ FEATURE = <span class="string">"http://xml.org/sax/features/external-general-ent
 dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-17">
+  <div class="slide hidden" id="slide-20">
     <section class="slide-content"><h3 id="csrf">CSRF</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
@@ -707,7 +748,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <p>Beware of CORS with credentials enabled!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-18">
+  <div class="slide hidden" id="slide-21">
     <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
@@ -723,7 +764,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-19">
+  <div class="slide hidden" id="slide-22">
     <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
@@ -736,7 +777,7 @@ String salt = BCrypt.gensalt();  <span class="comment">// saved in database with
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-20">
+  <div class="slide hidden" id="slide-23">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>

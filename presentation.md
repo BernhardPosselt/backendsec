@@ -170,10 +170,26 @@ public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email"
 }
 ```
 
-
-```
+```http
 POST /reset-password HTTP/1.1
 Host: myattackdomain.com
+```
+
+```http
+POST /reset-password HTTP/1.1
+Host: valid-domain.com
+Host: myattackdomain.com
+```
+
+```http
+POST /reset-password HTTP/1.1
+Host: valid-domain.com:@myattackdomain.com
+```
+
+```http
+POST /reset-password HTTP/1.1
+Host: valid-domain.com
+X-Forwarded-Host: myattackdomain.com
 ```
 
 ```java
@@ -190,7 +206,7 @@ Middleware approach:
 Collection<String> validDomains = Arrays.asList("myshopdomain.com", "192.168.0.1");
 
 validDomains.stream()
-  .filter(allowedDomain -> request.getRequestURL().startsWith(allowedDomain))
+  .filter(allowedDomain -> request.getServerName().equals(allowedDomain))
   .findAny()
   .orThrow(new HttpForbiddenException());
 ```
@@ -199,8 +215,8 @@ validDomains.stream()
 ```php
 $validDomains = ["myshopdomain.com", "192.168.0.1"];
 
-if (count(array_filter($validDomains, function () {
-  return strpos($_SERVER['HTTP_HOST'], $validDomains) === 0;
+if (count(array_filter($validDomains, function ($validDomain) {
+  return $_SERVER['HTTP_HOST'] === $validDomain;
 })) === 0) {
   throw new HttpForbiddenException();
 }
@@ -208,13 +224,31 @@ if (count(array_filter($validDomains, function () {
 
 --
 
-### Cache Poisoning
+### Cache Poisoning Attack
+**Similar to Host Header Poisoning**
 
-http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html
+Joomla used to generate HTML templates with absolute URLs:
+
+```
+GET / HTTP/1.1
+Host: cow"onerror='alert(1)'rel='stylesheet'
+```
+
+```xml
+<link href="http://cow"onerror='alert(1)'rel='stylesheet'/" rel="canonical"/>
+```
 
 --
 
-### Unvalidated Redirects
+### Cache Poisoning Prevention
+
+**Depends on your Cache Setup**
+
+More information on [http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html](http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html)
+
+--
+
+### Unvalidated Redirects Vulnerability
 
 ```java
 @RequestMapping("/redirect")
@@ -223,10 +257,49 @@ public void redirectTo(@RequestParam("url") String toUrl) {
 }
 ```
 
-* **GET** /redirect?toUrl=http://myfakeshop.com
+--
+
+### Unvalidated Redirects Attack
 
 ```java
-if (toUrl.startsWith("https://known.com"))
+@RequestMapping("/redirect")
+public void redirectTo(@RequestParam("url") String toUrl) {
+  return "redirect:" + toUrl;
+}
+```
+
+```http
+GET /redirect?url=http://myfakeshop.com
+```
+
+```http
+GET /redirect?url=http://valid-shop.com:@myfakeshop.com
+```
+
+```java
+return "redirect:http://valid-shop.com:@myfakeshop.com";
+```
+
+--
+
+### Unvalidated Redirects Prevention
+
+**Java**:
+```java
+@RequestMapping("/redirect")
+public void redirectTo(@RequestParam("url") String toUrl) {
+  if (toUrl.equals("http://valid-domain.com/the/url")) {
+    return "redirect:" + toUrl;
+  }
+}
+```
+
+**PHP**:
+```php
+if ($_GET['url'] === 'http://valid-domain.com/the/url') {
+  header('Location: ' . $_GET['url']);
+  exit;
+}
 ```
 
 --
