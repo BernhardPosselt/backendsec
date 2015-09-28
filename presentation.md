@@ -1,7 +1,7 @@
-title: Backend Security
+title: Web-Security
 theme: sjaakvandenberg/cleaver-light
 --
-# Backend Security
+# Web-Security
 
 --
 
@@ -9,7 +9,7 @@ theme: sjaakvandenberg/cleaver-light
 
 1. **Injection**
 2. **Broken Authentication and Session Management**
-3. Cross-Site Scripting (XSS)
+3. **Cross-Site Scripting (XSS)**
 4. Insecure Direct Object References
 5. Security Misconfiguration
 6. Sensitive Data Exposure
@@ -22,10 +22,13 @@ theme: sjaakvandenberg/cleaver-light
 
 ### What Will Be Covered
 
-* Shell Injection
+* Injection
 * Directory Traversal
 * Host Header Poisoning
+* Cache Poisoning
 * Unvalidated Redirects
+* Clickjacking
+* XSS
 * Session hijacking
 * XXE
 * CSRF
@@ -34,32 +37,75 @@ theme: sjaakvandenberg/cleaver-light
 
 --
 
-### Shell Injection
+### Shell Injection Vulnerability
 
 ```java
 @RequestMapping("/")
 public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
-  if (fileName.startsWith("/a/valid/directory")) {
+  if (fileName.startsWith("/a/valid/file")) {
     Runtime.getRuntime().exec("cat " +  fileName);
   }
 }
 ```
 
-* **GET** /?fileName=/a/valid/directory;rm -rf /
+--
 
-  **cat /a/valid/directory**
+### Shell Injection Attack
 
-  **rm -rf /**
+```java
+@RequestMapping("/")
+public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
+  if (fileName.startsWith("/a/valid/file")) {
+    Runtime.getRuntime().exec("cat " +  fileName);
+  }
+}
+```
+
+* **GET** /?fileName=/a/valid/file;rm -rf /
+
+```java
+Runtime.getRuntime().exec("cat /a/valid/file; rm -rf /");
+```
+
+--
+
+### Shell Injection Prevention
+
+**Better but vulnerable to directory traversal (next slide)**
+
+**Java**:
 
 ```java
 Runtime.getRuntime().exec(new String[]{"cat", fileName});
 ```
 
-**Same applies to LDAP, SMB, SQL!**
+**PHP**:
+
+```php
+shell_exec("cat " . escapeshellarg($_GET['fileName']));
+```
+
+* **Same applies to LDAP, SMB, SQL!**
+* **Beware of combinations**, e.g. executing SMB commands on the command line
+
 
 --
 
-### Directory Traversal
+### Directory Traversal Vulnerability
+
+```java
+@RequestMapping("/")
+public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
+  if (fileName.startsWith("/a/valid/directory")) {
+    Runtime.getRuntime().exec(new String[]{"cat", fileName});
+  }
+}
+```
+
+
+--
+
+### Directory Traversal Attack
 
 ```java
 @RequestMapping("/")
@@ -74,31 +120,97 @@ public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
 * **GET** /?fileName=\\a\\valid\\directory\\..\\..\\..\\sensitive.file
 
 ```java
-fileName = (new File(fileName)).getCanonicalPath();
-
-if (fileName.startsWith("/a/valid/directory")) {
-  Runtime.getRuntime().exec(new String[]{"cat", fileName});
-}
+Runtime.getRuntime().exec(new String[]{"cat", "/a/valid/directory/../../../etc/passwd"});
 ```
+
 --
 
-### Host Header Poisoning
+### Directory Traversal Prevention
+
+**Java**:
+
+```java
+fileName = (new File(fileName)).getCanonicalPath();
+if (fileName.startsWith("/a/valid/directory")) {
+  // etc
+}
+```
+
+**PHP**:
+
+```php
+$path = realpath($_GET['fileName']);  // attention: crashes when path does not exist, use a lib
+if (strpos($path, "/a/valid/directory") === 0) {
+  // etc
+}
+```
+
+--
+
+### Host Header Poisoning Vulnerability
 
 ```java
 @RequestMapping("/reset-password")
 public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
-  String resetUrl = request.getRequestURL().toString() + "?" + request.getQueryString();
+  String resetUrl = request.getRequestURL().toString() + "/new-password";
   String message = "Please go to " + resetUrl + " and enter a new password";
   Mail.send(email, message)
 }
 ```
 
-* **POST** /reset-password
-* **HOST**: mydomain.com
+--
+
+### Host Header Poisoning Attack
+```java
+@RequestMapping("/reset-password")
+public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
+  String resetUrl = request.getRequestURL().toString() + "/new-password";
+  String message = "Please go to " + resetUrl + " and enter a new password";
+  Mail.send(email, message)
+}
+```
+
 
 ```
-if (resetUrl.startsWith("https://mydomain.com"))
+POST /reset-password HTTP/1.1
+Host: myattackdomain.com
 ```
+
+```java
+String message = "Please go to http://myattackdomain.com/new-password and enter a new password";
+```
+
+--
+
+### Host Header Poisoning Prevention
+Middleware approach:
+
+**Java**:
+```java
+Collection<String> validDomains = Arrays.asList("myshopdomain.com", "192.168.0.1");
+
+validDomains.stream()
+  .filter(allowedDomain -> request.getRequestURL().startsWith(allowedDomain))
+  .findAny()
+  .orThrow(new HttpForbiddenException());
+```
+
+**PHP**:
+```php
+$validDomains = ["myshopdomain.com", "192.168.0.1"];
+
+if (count(array_filter($validDomains, function () {
+  return strpos($_SERVER['HTTP_HOST'], $validDomains) === 0;
+})) === 0) {
+  throw new HttpForbiddenException();
+}
+```
+
+--
+
+### Cache Poisoning
+
+http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html
 
 --
 
@@ -169,12 +281,11 @@ Attack via hidden form
 </form>
 ```
 
-CSRF token
+Spring: CSRF enforced by default since Spring Security 4.0
 
 ```xml
 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 ```
-or
 ```xml
 <meta name="_csrf" content="${_csrf.token}"/>
 <meta name="_csrf_header" content="${_csrf.headerName}"/>

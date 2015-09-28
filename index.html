@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <title>Backend Security</title>
+  <title>Web-Security</title>
   <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:200,300,400,500,600,700,900' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
@@ -489,7 +489,7 @@ pre .xml .cdata {
   </div>
 
   <div class="slide" id="slide-1">
-    <section class="slide-content"><h1 id="backend-security">Backend Security</h1>
+    <section class="slide-content"><h1 id="web-security">Web-Security</h1>
 </section>
   </div>
   <div class="slide hidden" id="slide-2">
@@ -497,7 +497,7 @@ pre .xml .cdata {
 <ol>
 <li><strong>Injection</strong></li>
 <li><strong>Broken Authentication and Session Management</strong></li>
-<li>Cross-Site Scripting (XSS)</li>
+<li><strong>Cross-Site Scripting (XSS)</strong></li>
 <li>Insecure Direct Object References</li>
 <li>Security Misconfiguration</li>
 <li>Sensitive Data Exposure</li>
@@ -511,10 +511,13 @@ pre .xml .cdata {
   <div class="slide hidden" id="slide-3">
     <section class="slide-content"><h3 id="what-will-be-covered">What Will Be Covered</h3>
 <ul>
-<li>Shell Injection</li>
+<li>Injection</li>
 <li>Directory Traversal</li>
 <li>Host Header Poisoning</li>
+<li>Cache Poisoning</li>
 <li>Unvalidated Redirects</li>
+<li>Clickjacking</li>
+<li>XSS</li>
 <li>Session hijacking</li>
 <li>XXE</li>
 <li>CSRF</li>
@@ -524,25 +527,54 @@ pre .xml .cdata {
 </section>
   </div>
   <div class="slide hidden" id="slide-4">
-    <section class="slide-content"><h3 id="shell-injection">Shell Injection</h3>
+    <section class="slide-content"><h3 id="shell-injection-vulnerability">Shell Injection Vulnerability</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/"</span>)
 <span class="keyword">public</span> ModelAndView listFiles(<span class="annotation">@RequestParam</span>(<span class="string">"fileName"</span>) String fileName) {
-  <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/directory"</span>)) {
+  <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/file"</span>)) {
+    Runtime.getRuntime().exec(<span class="string">"cat "</span> +  fileName);
+  }
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-5">
+    <section class="slide-content"><h3 id="shell-injection-attack">Shell Injection Attack</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/"</span>)
+<span class="keyword">public</span> ModelAndView listFiles(<span class="annotation">@RequestParam</span>(<span class="string">"fileName"</span>) String fileName) {
+  <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/file"</span>)) {
     Runtime.getRuntime().exec(<span class="string">"cat "</span> +  fileName);
   }
 }</code></pre>
 <ul>
-<li><p><strong>GET</strong> /?fileName=/a/valid/directory;rm -rf /</p>
-<p><strong>cat /a/valid/directory</strong></p>
-<p><strong>rm -rf /</strong></p>
-</li>
+<li><strong>GET</strong> /?fileName=/a/valid/file;rm -rf /</li>
 </ul>
-<pre><code class="lang-java">Runtime.getRuntime().exec(<span class="keyword">new</span> String[]{<span class="string">"cat"</span>, fileName});</code></pre>
-<p><strong>Same applies to LDAP, SMB, SQL!</strong></p>
+<pre><code class="lang-java">Runtime.getRuntime().exec(<span class="string">"cat /a/valid/file; rm -rf /"</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-5">
-    <section class="slide-content"><h3 id="directory-traversal">Directory Traversal</h3>
+  <div class="slide hidden" id="slide-6">
+    <section class="slide-content"><h3 id="shell-injection-prevention">Shell Injection Prevention</h3>
+<p><strong>Better but vulnerable to directory traversal (next slide)</strong></p>
+<p><strong>Java</strong>:</p>
+<pre><code class="lang-java">Runtime.getRuntime().exec(<span class="keyword">new</span> String[]{<span class="string">"cat"</span>, fileName});</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php">shell_exec(<span class="string">"cat "</span> . escapeshellarg(<span class="variable">$_GET</span>[<span class="string">'fileName'</span>]));</code></pre>
+<ul>
+<li><strong>Same applies to LDAP, SMB, SQL!</strong></li>
+<li><strong>Beware of combinations</strong>, e.g. executing SMB commands on the command line</li>
+</ul>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-7">
+    <section class="slide-content"><h3 id="directory-traversal-vulnerability">Directory Traversal Vulnerability</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/"</span>)
+<span class="keyword">public</span> ModelAndView listFiles(<span class="annotation">@RequestParam</span>(<span class="string">"fileName"</span>) String fileName) {
+  <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/directory"</span>)) {
+    Runtime.getRuntime().exec(<span class="keyword">new</span> String[]{<span class="string">"cat"</span>, fileName});
+  }
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-8">
+    <section class="slide-content"><h3 id="directory-traversal-attack">Directory Traversal Attack</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/"</span>)
 <span class="keyword">public</span> ModelAndView listFiles(<span class="annotation">@RequestParam</span>(<span class="string">"fileName"</span>) String fileName) {
   <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/directory"</span>)) {
@@ -553,29 +585,72 @@ pre .xml .cdata {
 <li><strong>GET</strong> /?fileName=/a/valid/directory/../../../etc/passwd</li>
 <li><strong>GET</strong> /?fileName=\a\valid\directory\..\..\..\sensitive.file</li>
 </ul>
+<pre><code class="lang-java">Runtime.getRuntime().exec(<span class="keyword">new</span> String[]{<span class="string">"cat"</span>, <span class="string">"/a/valid/directory/../../../etc/passwd"</span>});</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-9">
+    <section class="slide-content"><h3 id="directory-traversal-prevention">Directory Traversal Prevention</h3>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java">fileName = (<span class="keyword">new</span> File(fileName)).getCanonicalPath();
-
 <span class="keyword">if</span> (fileName.startsWith(<span class="string">"/a/valid/directory"</span>)) {
-  Runtime.getRuntime().exec(<span class="keyword">new</span> String[]{<span class="string">"cat"</span>, fileName});
+  <span class="comment">// etc</span>
+}</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="variable">$path</span> = realpath(<span class="variable">$_GET</span>[<span class="string">'fileName'</span>]);  <span class="comment">// attention: crashes when path does not exist, use a lib</span>
+<span class="keyword">if</span> (strpos(<span class="variable">$path</span>, <span class="string">"/a/valid/directory"</span>) === <span class="number">0</span>) {
+  <span class="comment">// etc</span>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-6">
-    <section class="slide-content"><h3 id="host-header-poisoning">Host Header Poisoning</h3>
+  <div class="slide hidden" id="slide-10">
+    <section class="slide-content"><h3 id="host-header-poisoning-vulnerability">Host Header Poisoning Vulnerability</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/reset-password"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(HttpServletRequest request, <span class="annotation">@RequestParam</span>(<span class="string">"email"</span>) String email) {
-  String resetUrl = request.getRequestURL().toString() + <span class="string">"?"</span> + request.getQueryString();
+  String resetUrl = request.getRequestURL().toString() + <span class="string">"/new-password"</span>;
   String message = <span class="string">"Please go to "</span> + resetUrl + <span class="string">" and enter a new password"</span>;
   Mail.send(email, message)
 }</code></pre>
-<ul>
-<li><strong>POST</strong> /reset-password</li>
-<li><strong>HOST</strong>: mydomain.com</li>
-</ul>
-<pre><code>if (resetUrl.startsWith(&quot;https://mydomain.com&quot;))</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-7">
+  <div class="slide hidden" id="slide-11">
+    <section class="slide-content"><h3 id="host-header-poisoning-attack">Host Header Poisoning Attack</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/reset-password"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(HttpServletRequest request, <span class="annotation">@RequestParam</span>(<span class="string">"email"</span>) String email) {
+  String resetUrl = request.getRequestURL().toString() + <span class="string">"/new-password"</span>;
+  String message = <span class="string">"Please go to "</span> + resetUrl + <span class="string">" and enter a new password"</span>;
+  Mail.send(email, message)
+}</code></pre>
+<pre><code>POST /reset-password HTTP/1.1
+Host: myattackdomain.com</code></pre>
+<pre><code class="lang-java">String message = <span class="string">"Please go to http://myattackdomain.com/new-password and enter a new password"</span>;</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-12">
+    <section class="slide-content"><h3 id="host-header-poisoning-prevention">Host Header Poisoning Prevention</h3>
+<p>Middleware approach:</p>
+<p><strong>Java</strong>:</p>
+<pre><code class="lang-java">Collection&lt;String&gt; validDomains = Arrays.asList(<span class="string">"myshopdomain.com"</span>, <span class="string">"192.168.0.1"</span>);
+
+validDomains.stream()
+  .filter(allowedDomain -&gt; request.getRequestURL().startsWith(allowedDomain))
+  .findAny()
+  .orThrow(<span class="keyword">new</span> HttpForbiddenException());</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="variable">$validDomains</span> = [<span class="string">"myshopdomain.com"</span>, <span class="string">"192.168.0.1"</span>];
+
+<span class="keyword">if</span> (count(array_filter(<span class="variable">$validDomains</span>, <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+  <span class="keyword">return</span> strpos(<span class="variable">$_SERVER</span>[<span class="string">'HTTP_HOST'</span>], <span class="variable">$validDomains</span>) === <span class="number">0</span>;
+})) === <span class="number">0</span>) {
+  <span class="keyword">throw</span> <span class="keyword">new</span> HttpForbiddenException();
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-13">
+    <section class="slide-content"><h3 id="cache-poisoning">Cache Poisoning</h3>
+<p><a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html">http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html</a></p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-14">
     <section class="slide-content"><h3 id="unvalidated-redirects">Unvalidated Redirects</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
@@ -587,7 +662,7 @@ pre .xml .cdata {
 <pre><code class="lang-java"><span class="keyword">if</span> (toUrl.startsWith(<span class="string">"https://known.com"</span>))</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-8">
+  <div class="slide hidden" id="slide-15">
     <section class="slide-content"><h3 id="session-hijacking">Session hijacking</h3>
 <p>Generally covered by framework</p>
 <ul>
@@ -599,7 +674,7 @@ pre .xml .cdata {
 <p>More on <a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet"><a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet">https://www.owasp.org/index.php/Session_Management_Cheat_Sheet</a></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-9">
+  <div class="slide hidden" id="slide-16">
     <section class="slide-content"><h3 id="xxe">XXE</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
@@ -613,7 +688,7 @@ FEATURE = <span class="string">"http://xml.org/sax/features/external-general-ent
 dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-10">
+  <div class="slide hidden" id="slide-17">
     <section class="slide-content"><h3 id="csrf">CSRF</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
@@ -625,16 +700,14 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">form</span> <span class="attribute">action</span>=<span class="value">"https://myshop.com/delete-user"</span> <span class="attribute">method</span>=<span class="value">"post"</span>&gt;</span>
 <span class="tag">&lt;<span class="title">input</span> <span class="attribute">name</span>=<span class="value">"user"</span> <span class="attribute">value</span>=<span class="value">"someuser"</span>&gt;</span>
 <span class="tag">&lt;/<span class="title">form</span>&gt;</span></code></pre>
-<p>CSRF token</p>
-<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
-<span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"token"</span>) String token) {
-  <span class="keyword">if</span> (isAuthenticated() &amp;&amp; isTokenValid(token)) {
-    userService.delete(user)
-  }
-}</code></pre>
+<p>Spring: CSRF enforced by default since Spring Security 4.0</p>
+<pre><code class="lang-xml"><span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"hidden"</span> <span class="attribute">name</span>=<span class="value">"${_csrf.parameterName}"</span> <span class="attribute">value</span>=<span class="value">"${_csrf.token}"</span>/&gt;</span></code></pre>
+<pre><code class="lang-xml"><span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"_csrf"</span> <span class="attribute">content</span>=<span class="value">"${_csrf.token}"</span>/&gt;</span>
+<span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"_csrf_header"</span> <span class="attribute">content</span>=<span class="value">"${_csrf.headerName}"</span>/&gt;</span></code></pre>
+<p>Beware of CORS with credentials enabled!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-11">
+  <div class="slide hidden" id="slide-18">
     <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
@@ -650,7 +723,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-12">
+  <div class="slide hidden" id="slide-19">
     <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
@@ -663,7 +736,7 @@ String salt = BCrypt.gensalt();  <span class="comment">// saved in database with
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-13">
+  <div class="slide hidden" id="slide-20">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
