@@ -171,14 +171,16 @@ Attack via hidden form
 
 CSRF token
 
-```java
-@RequestMapping("/delete-user")
-public void deleteUser(@RequestParam("user") String user, @RequestParam("token") String token) {
-  if (isAuthenticated() && isTokenValid(token)) {
-    userService.delete(user)
-  }
-}
+```xml
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 ```
+or
+```xml
+<meta name="_csrf" content="${_csrf.token}"/>
+<meta name="_csrf_header" content="${_csrf.headerName}"/>
+```
+
+Beware of CORS with credentials enabled!
 
 --
 
