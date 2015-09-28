@@ -304,6 +304,112 @@ if ($_GET['url'] === 'http://valid-domain.com/the/url') {
 
 --
 
+### Clickjacking Attack
+
+Invisible IFrame + CSS magic which redirects clicks to target website
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/3mk0RySeNsU/0.jpg)](http://www.youtube.com/watch?v=3mk0RySeNsU)
+
+--
+
+### Clickjacking Prevention
+Middleware approach, more options (**DENY**, **SAMEORIGIN**, **ALLOW-FROM uri**)
+
+**Java**:
+```java
+HttpservletResponse response;
+response.setHeader('X-Frame-Options', 'DENY');
+```
+
+**PHP**:
+```php
+header('X-Frame-Options: DENY')
+```
+--
+
+### XSS Vulnerability
+PHP examples this time (I'm not that familiar with JSP)
+
+```php
+<input type="text" value="<?php echo $accountId ?>"/>
+```
+
+```php
+<?php echo $accountId ?>
+```
+
+```php
+<script>var accountId = <?php echo $accountId ?>;</script>
+```
+
+```php
+<<?php echo $accountId ?>>
+```
+
+--
+
+### XSS Attack
+
+**$accountId = "\" /> &lt;script&gt;alert('hi')&lt;/script&gt;<img src=\""**
+
+```php
+<input type="text" value="" /> <script>alert('hi')</script><img src=""/>
+```
+
+**$accountId = "&lt;script&gt;alert('hi')&lt;/script&gt;"**
+
+```php
+<script>alert('hi')</script>
+```
+**$accountId = '0; window.location = "http://attacker.com"'**
+
+```php
+<script>var accountId = 0; window.location = "http://attacker.com"; </script>
+```
+
+**$accountId = "a>&lt;script&gt;alert('hi')&lt;/script";**
+
+```php
+<a><script>alert('hi')</script>
+```
+
+--
+
+### Lesser Known XSS Vulnerabilities
+**href**, **src**, **style** and **&lt;style&gt;** allow javascript:alert('hi')
+
+```php
+<a href="<?php echo $accountId>">link</a>
+```
+
+```php
+<!-- <?php echo $comment ?> -->
+```
+
+```php
+<img src="<?php echo $accountId>"/>
+```
+
+```php
+<img style="<?php echo $accountId>"/>
+```
+
+```php
+<style><?php echo $accountId></style>
+```
+
+--
+
+### XSS Prevention
+
+* Escape based on usage
+* Validate URIs for **src** and **href**
+* Do not use dynamic CSS style sheets
+* [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules), too much possibilities
+* Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
+
+--
+
 ### Session hijacking
 
 Generally covered by framework

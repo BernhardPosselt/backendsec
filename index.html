@@ -704,6 +704,64 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 </section>
   </div>
   <div class="slide hidden" id="slide-18">
+    <section class="slide-content"><h3 id="clickjacking-attack">Clickjacking Attack</h3>
+<p>Invisible IFrame + CSS magic which redirects clicks to target website</p>
+<p><a href="http://www.youtube.com/watch?v=3mk0RySeNsU"><img src="http://img.youtube.com/vi/3mk0RySeNsU/0.jpg" alt="IMAGE ALT TEXT HERE"></a></p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-19">
+    <section class="slide-content"><h3 id="clickjacking-prevention">Clickjacking Prevention</h3>
+<p>Middleware approach, more options (<strong>DENY</strong>, <strong>SAMEORIGIN</strong>, <strong>ALLOW-FROM uri</strong>)</p>
+<p><strong>Java</strong>:</p>
+<pre><code class="lang-java">HttpservletResponse response;
+response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="string">'DENY'</span>);</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php">header(<span class="string">'X-Frame-Options: DENY'</span>)</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-20">
+    <section class="slide-content"><h3 id="xss-vulnerability">XSS Vulnerability</h3>
+<p>PHP examples this time (I&#39;m not that familiar with JSP)</p>
+<pre><code class="lang-php">&lt;input type=<span class="string">"text"</span> value=<span class="string">"&lt;?php echo $accountId ?&gt;"</span>/&gt;</code></pre>
+<pre><code class="lang-php"><span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span> <span class="preprocessor">?&gt;</span></code></pre>
+<pre><code class="lang-php">&lt;script&gt;<span class="keyword">var</span> accountId = <span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span> <span class="preprocessor">?&gt;</span>;&lt;/script&gt;</code></pre>
+<pre><code class="lang-php">&lt;<span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span> <span class="preprocessor">?&gt;</span>&gt;</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-21">
+    <section class="slide-content"><h3 id="xss-attack">XSS Attack</h3>
+<p><strong>$accountId = &quot;\&quot; /&gt; &lt;script&gt;alert(&#39;hi&#39;)&lt;/script&gt;&lt;img src=\&quot;&quot;</strong></p>
+<pre><code class="lang-php">&lt;input type=<span class="string">"text"</span> value=<span class="string">""</span> /&gt; &lt;script&gt;alert(<span class="string">'hi'</span>)&lt;/script&gt;&lt;img src=<span class="string">""</span>/&gt;</code></pre>
+<p><strong>$accountId = &quot;&lt;script&gt;alert(&#39;hi&#39;)&lt;/script&gt;&quot;</strong></p>
+<pre><code class="lang-php">&lt;script&gt;alert(<span class="string">'hi'</span>)&lt;/script&gt;</code></pre>
+<p><strong>$accountId = &#39;0; window.location = &quot;<a href="http://attacker.com">http://attacker.com</a>&quot;&#39;</strong></p>
+<pre><code class="lang-php">&lt;script&gt;<span class="keyword">var</span> accountId = <span class="number">0</span>; window.location = <span class="string">"http://attacker.com"</span>; &lt;/script&gt;</code></pre>
+<p><strong>$accountId = &quot;a&gt;&lt;script&gt;alert(&#39;hi&#39;)&lt;/script&quot;;</strong></p>
+<pre><code class="lang-php">&lt;a&gt;&lt;script&gt;alert(<span class="string">'hi'</span>)&lt;/script&gt;</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-22">
+    <section class="slide-content"><h3 id="lesser-known-xss-vulnerabilities">Lesser Known XSS Vulnerabilities</h3>
+<p><strong>href</strong>, <strong>src</strong>, <strong>style</strong> and <strong>&lt;style&gt;</strong> allow javascript:alert(&#39;hi&#39;)</p>
+<pre><code class="lang-php">&lt;a href=<span class="string">"&lt;?php echo $accountId&gt;"</span>&gt;link&lt;/a&gt;</code></pre>
+<pre><code class="lang-php">&lt;!-- <span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$comment</span> <span class="preprocessor">?&gt;</span> --&gt;</code></pre>
+<pre><code class="lang-php">&lt;img src=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
+<pre><code class="lang-php">&lt;img style=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
+<pre><code class="lang-php">&lt;style&gt;<span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span>&gt;&lt;/style&gt;</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-23">
+    <section class="slide-content"><h3 id="xss-prevention">XSS Prevention</h3>
+<ul>
+<li>Escape based on usage</li>
+<li>Validate URIs for <strong>src</strong> and <strong>href</strong></li>
+<li>Do not use dynamic CSS style sheets</li>
+<li><a href="https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules">Consult the prevention sheet</a>, too much possibilities</li>
+<li>Use <a href="https://developer.mozilla.org/en-US/docs/Web/Security/CSP">CSP</a></li>
+</ul>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-24">
     <section class="slide-content"><h3 id="session-hijacking">Session hijacking</h3>
 <p>Generally covered by framework</p>
 <ul>
@@ -715,7 +773,7 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 <p>More on <a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet"><a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet">https://www.owasp.org/index.php/Session_Management_Cheat_Sheet</a></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-19">
+  <div class="slide hidden" id="slide-25">
     <section class="slide-content"><h3 id="xxe">XXE</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
@@ -729,7 +787,7 @@ FEATURE = <span class="string">"http://xml.org/sax/features/external-general-ent
 dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-20">
+  <div class="slide hidden" id="slide-26">
     <section class="slide-content"><h3 id="csrf">CSRF</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
@@ -748,7 +806,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <p>Beware of CORS with credentials enabled!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-21">
+  <div class="slide hidden" id="slide-27">
     <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
@@ -764,7 +822,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-22">
+  <div class="slide hidden" id="slide-28">
     <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
@@ -777,7 +835,7 @@ String salt = BCrypt.gensalt();  <span class="comment">// saved in database with
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-23">
+  <div class="slide hidden" id="slide-29">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
