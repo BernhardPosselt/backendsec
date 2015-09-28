@@ -519,6 +519,7 @@ pre .xml .cdata {
 <li>Clickjacking</li>
 <li>XSS</li>
 <li>Session hijacking</li>
+<li>File Upload</li>
 <li>XXE</li>
 <li>CSRF</li>
 <li>Timing Attacks</li>
@@ -777,6 +778,69 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 </section>
   </div>
   <div class="slide hidden" id="slide-25">
+    <section class="slide-content"><h3 id="file-upload-vulnerability">File Upload Vulnerability</h3>
+<pre><code class="lang-php"><span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
+    <span class="keyword">require</span>(<span class="variable">$filename</span>);
+}</code></pre>
+<pre><code class="lang-php"><span class="keyword">if</span> (in_array(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"type"</span>], [<span class="string">"image/gif"</span>, <span class="string">"image/png"</span>])) {
+    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
+    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
+}</code></pre>
+<pre><code class="lang-php"><span class="keyword">include</span>(<span class="variable">$_GET</span>[<span class="string">'navigation'</span>] <span class="string">'.php'</span>);</code></pre>
+<pre><code class="lang-php"><span class="keyword">if</span> (@getimagesize(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>]) !== <span class="keyword">false</span>) {
+    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
+    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-26">
+    <section class="slide-content"><h3 id="file-upload-attack">File Upload Attack</h3>
+<pre><code class="lang-php"><span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
+    <span class="keyword">require</span>(<span class="variable">$filename</span>);
+}</code></pre>
+<p>Upload an image which embeds php tags (&lt;?php ?&gt;)</p>
+<pre><code class="lang-php"><span class="keyword">if</span> (in_array(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"type"</span>], [<span class="string">"image/gif"</span>, <span class="string">"image/png"</span>])) {
+    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
+    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
+}</code></pre>
+<pre><code class="lang-http"><span class="attribute">Content-Type</span>: <span class="string">multipart/form-data; boundary=----ThisIsABoundary</span>
+
+<span class="brainfuck"> <span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">ThisIsABoundary</span>
+<span class="comment">Content</span>-<span class="comment">Disposition:</span> <span class="comment">form</span>-<span class="comment">data;</span> <span class="comment">name="file";</span> <span class="comment">filename="evil</span>.<span class="comment">php"</span>
+<span class="comment">Content</span>-<span class="comment">Type:</span> <span class="comment">image/jpeg</span>
+
+&lt;<span class="comment">?php</span> <span class="comment">phpinfo();</span>
+ <span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">ThisIsABoundary</span>-<span class="literal">-</span></span></code></pre>
+<pre><code class="lang-php"><span class="keyword">include</span>(<span class="variable">$_GET</span>[<span class="string">'id'</span>] <span class="string">'.php'</span>);</code></pre>
+<pre><code>GET /?id=myuploaded.php</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-27">
+    <section class="slide-content"><h3 id="file-upload-attack-2">File Upload Attack 2</h3>
+<pre><code class="lang-php"><span class="keyword">if</span> (@getimagesize(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>]) !== <span class="keyword">false</span>) {
+    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
+    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
+}</code></pre>
+<p>Embed comment in jpeg</p>
+<pre><code class="lang-php"><span class="preprocessor">&lt;?php</span> do_something_evil(); __halt_compiler();<span class="comment"></code></pre>
+<p>Parser stops before parsing garbage image data</p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-28">
+    <section class="slide-content"><h3 id="file-upload-prevention">File Upload Prevention</h3>
+<ul>
+<li>Do not execute anything from the upload directory</li>
+<li>Do not require/include anything from the upload directory</li>
+<li>Disallow special files (.htaccess, <a href="http://php.net/manual/en/configuration.file.per-user.php">.user.ini</a>, web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing</li>
+<li>Remove executable bits from uploads (644)</li>
+<li>Set the correct content type when serving the file</li>
+<li>Disallow SVG (JavaScript can be embedded) and HTML</li>
+<li>Use a separate static content server and domain</li>
+<li><a href="http://nullcandy.com/php-image-upload-security-how-not-to-do-it/"><a href="http://nullcandy.com/php-image-upload-security-how-not-to-do-it/">http://nullcandy.com/php-image-upload-security-how-not-to-do-it/</a></a></li>
+</ul>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-29">
     <section class="slide-content"><h3 id="xxe">XXE</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
@@ -790,7 +854,7 @@ FEATURE = <span class="string">"http://xml.org/sax/features/external-general-ent
 dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-26">
+  <div class="slide hidden" id="slide-30">
     <section class="slide-content"><h3 id="csrf">CSRF</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
@@ -809,7 +873,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <p>Beware of CORS with credentials enabled!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-27">
+  <div class="slide hidden" id="slide-31">
     <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
@@ -825,7 +889,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-28">
+  <div class="slide hidden" id="slide-32">
     <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
@@ -838,7 +902,7 @@ String salt = BCrypt.gensalt();  <span class="comment">// saved in database with
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-29">
+  <div class="slide hidden" id="slide-33">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>

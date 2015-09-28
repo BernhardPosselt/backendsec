@@ -30,6 +30,7 @@ theme: sjaakvandenberg/cleaver-light
 * Clickjacking
 * XSS
 * Session hijacking
+* File Upload
 * XXE
 * CSRF
 * Timing Attacks
@@ -430,6 +431,103 @@ Generally covered by framework
 
 More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
 
+--
+
+### File Upload Vulnerability
+
+```php
+if(preg_match('~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i', $filename)) {
+    require($filename);
+}
+```
+
+```php
+if (in_array($_FILES["file"]["type"], ["image/gif", "image/png"])) {
+    $destination = "uploads/" . $_FILES["file"]["name"];
+    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
+}
+```
+
+```php
+include($_GET['navigation'] '.php');
+```
+
+```php
+if (@getimagesize($_FILES["file"]["tmp_name"]) !== false) {
+    $destination = "uploads/" . $_FILES["file"]["name"];
+    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
+}
+```
+
+
+--
+
+### File Upload Attack
+
+```php
+if(preg_match('~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i', $filename)) {
+    require($filename);
+}
+```
+Upload an image which embeds php tags (<?php ?>)
+
+```php
+if (in_array($_FILES["file"]["type"], ["image/gif", "image/png"])) {
+    $destination = "uploads/" . $_FILES["file"]["name"];
+    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
+}
+```
+
+```http
+Content-Type: multipart/form-data; boundary=----ThisIsABoundary
+
+ ------ThisIsABoundary
+Content-Disposition: form-data; name="file"; filename="evil.php"
+Content-Type: image/jpeg
+
+<?php phpinfo();
+ ------ThisIsABoundary--
+```
+
+```php
+include($_GET['id'] '.php');
+```
+
+```
+GET /?id=myuploaded.php
+```
+
+--
+
+### File Upload Attack 2
+
+```php
+if (@getimagesize($_FILES["file"]["tmp_name"]) !== false) {
+    $destination = "uploads/" . $_FILES["file"]["name"];
+    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
+}
+```
+
+Embed comment in jpeg
+
+```php
+<?php do_something_evil(); __halt_compiler();
+```
+
+Parser stops before parsing garbage image data
+
+--
+
+### File Upload Prevention
+
+* Do not execute anything from the upload directory
+* Do not require/include anything from the upload directory
+* Disallow special files (.htaccess, [.user.ini](http://php.net/manual/en/configuration.file.per-user.php), web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing
+* Remove executable bits from uploads (644)
+* Set the correct content type when serving the file
+* Disallow SVG (JavaScript can be embedded) and HTML
+* Use a separate static content server and domain
+* [http://nullcandy.com/php-image-upload-security-how-not-to-do-it/](http://nullcandy.com/php-image-upload-security-how-not-to-do-it/)
 --
 
 ### XXE
