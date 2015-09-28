@@ -163,7 +163,7 @@ public void deleteUser(@RequestParam("user") String user) {
 
 Attack via hidden form
 
-```HTML
+```xml
 <form action="https://myshop.com/delete-user" method="post">
 <input name="user" value="someuser">
 </form>
@@ -194,6 +194,12 @@ public void resetPasswordEmail(@RequestParam("user") String user, @RequestParam(
 ```
 
 * Same applies to database!
+
+```java
+if (constantEquals(user, "John") && constantEquals(pass, "Passw0rd")) {
+  // authenticate user
+}
+```
 
 --
 

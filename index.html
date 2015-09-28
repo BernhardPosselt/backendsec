@@ -622,9 +622,9 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
   }
 }</code></pre>
 <p>Attack via hidden form</p>
-<pre><code>&lt;form action=&quot;https://myshop.com/delete-user&quot; method=&quot;post&quot;&gt;
-&lt;input name=&quot;user&quot; value=&quot;someuser&quot;&gt;
-&lt;/form&gt;</code></pre>
+<pre><code class="lang-xml"><span class="tag">&lt;<span class="title">form</span> <span class="attribute">action</span>=<span class="value">"https://myshop.com/delete-user"</span> <span class="attribute">method</span>=<span class="value">"post"</span>&gt;</span>
+<span class="tag">&lt;<span class="title">input</span> <span class="attribute">name</span>=<span class="value">"user"</span> <span class="attribute">value</span>=<span class="value">"someuser"</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">form</span>&gt;</span></code></pre>
 <p>CSRF token</p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"token"</span>) String token) {
@@ -645,6 +645,9 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <ul>
 <li>Same applies to database!</li>
 </ul>
+<pre><code class="lang-java"><span class="keyword">if</span> (constantEquals(user, <span class="string">"John"</span>) &amp;&amp; constantEquals(pass, <span class="string">"Passw0rd"</span>)) {
+  <span class="comment">// authenticate user</span>
+}</code></pre>
 </section>
   </div>
   <div class="slide hidden" id="slide-12">
