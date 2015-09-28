@@ -5,11 +5,18 @@ theme: sjaakvandenberg/cleaver-light
 
 --
 
-### What This Talk Is Not About
+### OWASP TOP 10 2013
 
-
-* Sql Injection
-* HTML/JavaScript/CSS related attacks like XSS
+1. **Injection**
+2. **Broken Authentication and Session Management**
+3. Cross-Site Scripting (XSS)
+4. Insecure Direct Object References
+5. Security Misconfiguration
+6. Sensitive Data Exposure
+7. Missing Function Level Access Control
+8. **Cross-Site Request Forgery (CSRF)**
+9. Using Known Vulnerable Components
+10. **Unvalidated Redirects and Forwards**
 
 --
 
@@ -90,7 +97,122 @@ public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email"
 * **HOST**: mydomain.com
 
 ```
-if (resetUrl.startsWith("https://mydomain.com")) 
+if (resetUrl.startsWith("https://mydomain.com"))
+```
+
+--
+
+### Unvalidated Redirects
+
+```java
+@RequestMapping("/redirect")
+public void redirectTo(@RequestParam("url") String toUrl) {
+  return "redirect:" + toUrl;
+}
+```
+
+* **GET** /redirect?toUrl=http://myfakeshop.com
+
+```java
+if (toUrl.startsWith("https://known.com"))
+```
+
+--
+
+### Session hijacking
+
+Generally covered by framework
+
+* **GET** /some-url?session_id=1234kj123k12323
+
+* https://myshop.com/login?session_id=1234kj123k12323
+
+More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
+
+--
+
+### XXE
+
+```xml
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE foo [  
+ <!ELEMENT foo ANY >
+ <!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>
+```
+
+* Disable XML External Entity Processing!
+
+```java
+DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+FEATURE = "http://xml.org/sax/features/external-general-entities";
+dbf.setFeature(FEATURE, false);
+```
+
+--
+
+### CSRF
+
+```java
+@RequestMapping("/delete-user")
+public void deleteUser(@RequestParam("user") String user) {
+  if (isAuthenticated()) {
+    userService.delete(user)
+  }
+}
+```
+
+Attack via hidden form
+
+```HTML
+<form action="https://myshop.com/delete-user" method="post">
+<input name="user" value="someuser">
+</form>
+```
+
+CSRF token
+
+```java
+@RequestMapping("/delete-user")
+public void deleteUser(@RequestParam("user") String user, @RequestParam("token") String token) {
+  if (isAuthenticated() && isTokenValid(token)) {
+    userService.delete(user)
+  }
+}
+```
+
+--
+
+### Timing Attacks
+
+```java
+@RequestMapping("/authenticate")
+public void resetPasswordEmail(@RequestParam("user") String user, @RequestParam("pass") String pass) {
+  if (user.equals("John") && pass.equals("Passw0rd")) {
+    // authenticate user
+  }
+}
+```
+
+* Same applies to database!
+
+--
+
+### Password Hashing
+
+
+```java
+String password = "mypass";
+String hashedPassword = hash(password);
+```
+
+Rainbow Tables...
+
+* bcrypt!
+
+```java
+String global_salt = BCrypt.gensalt();  // saved in config
+String salt = BCrypt.gensalt();  // saved in database with each user
+String hashedPassword = BCrypt.hashpw(password, global_salt + salt);
 ```
 
 --

@@ -493,11 +493,19 @@ pre .xml .cdata {
 </section>
   </div>
   <div class="slide hidden" id="slide-2">
-    <section class="slide-content"><h3 id="what-this-talk-is-not-about">What This Talk Is Not About</h3>
-<ul>
-<li>Sql Injection</li>
-<li>HTML/JavaScript/CSS related attacks like XSS</li>
-</ul>
+    <section class="slide-content"><h3 id="owasp-top-10-2013">OWASP TOP 10 2013</h3>
+<ol>
+<li><strong>Injection</strong></li>
+<li><strong>Broken Authentication and Session Management</strong></li>
+<li>Cross-Site Scripting (XSS)</li>
+<li>Insecure Direct Object References</li>
+<li>Security Misconfiguration</li>
+<li>Sensitive Data Exposure</li>
+<li>Missing Function Level Access Control</li>
+<li><strong>Cross-Site Request Forgery (CSRF)</strong></li>
+<li>Using Known Vulnerable Components</li>
+<li><strong>Unvalidated Redirects and Forwards</strong></li>
+</ol>
 </section>
   </div>
   <div class="slide hidden" id="slide-3">
@@ -568,6 +576,91 @@ pre .xml .cdata {
 </section>
   </div>
   <div class="slide hidden" id="slide-7">
+    <section class="slide-content"><h3 id="unvalidated-redirects">Unvalidated Redirects</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
+  <span class="keyword">return</span> <span class="string">"redirect:"</span> + toUrl;
+}</code></pre>
+<ul>
+<li><strong>GET</strong> /redirect?toUrl=<a href="http://myfakeshop.com">http://myfakeshop.com</a></li>
+</ul>
+<pre><code class="lang-java"><span class="keyword">if</span> (toUrl.startsWith(<span class="string">"https://known.com"</span>))</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-8">
+    <section class="slide-content"><h3 id="session-hijacking">Session hijacking</h3>
+<p>Generally covered by framework</p>
+<ul>
+<li><p><strong>GET</strong> /some-url?session_id=1234kj123k12323</p>
+</li>
+<li><p><a href="https://myshop.com/login?session_id=1234kj123k12323">https://myshop.com/login?session_id=1234kj123k12323</a></p>
+</li>
+</ul>
+<p>More on <a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet"><a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet">https://www.owasp.org/index.php/Session_Management_Cheat_Sheet</a></a></p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-9">
+    <section class="slide-content"><h3 id="xxe">XXE</h3>
+<pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
+<span class="doctype">&lt;!DOCTYPE foo [  
+ &lt;!ELEMENT foo ANY &gt;
+ &lt;!ENTITY xxe SYSTEM "file:///etc/passwd" &gt;]&gt;</span><span class="tag">&lt;<span class="title">foo</span>&gt;</span>&amp;xxe;<span class="tag">&lt;/<span class="title">foo</span>&gt;</span></code></pre>
+<ul>
+<li>Disable XML External Entity Processing!</li>
+</ul>
+<pre><code class="lang-java">DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+FEATURE = <span class="string">"http://xml.org/sax/features/external-general-entities"</span>;
+dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-10">
+    <section class="slide-content"><h3 id="csrf">CSRF</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
+  <span class="keyword">if</span> (isAuthenticated()) {
+    userService.delete(user)
+  }
+}</code></pre>
+<p>Attack via hidden form</p>
+<pre><code>&lt;form action=&quot;https://myshop.com/delete-user&quot; method=&quot;post&quot;&gt;
+&lt;input name=&quot;user&quot; value=&quot;someuser&quot;&gt;
+&lt;/form&gt;</code></pre>
+<p>CSRF token</p>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"token"</span>) String token) {
+  <span class="keyword">if</span> (isAuthenticated() &amp;&amp; isTokenValid(token)) {
+    userService.delete(user)
+  }
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-11">
+    <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
+  <span class="keyword">if</span> (user.equals(<span class="string">"John"</span>) &amp;&amp; pass.equals(<span class="string">"Passw0rd"</span>)) {
+    <span class="comment">// authenticate user</span>
+  }
+}</code></pre>
+<ul>
+<li>Same applies to database!</li>
+</ul>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-12">
+    <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
+<pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
+String hashedPassword = hash(password);</code></pre>
+<p>Rainbow Tables...</p>
+<ul>
+<li>bcrypt!</li>
+</ul>
+<pre><code class="lang-java">String global_salt = BCrypt.gensalt();  <span class="comment">// saved in config</span>
+String salt = BCrypt.gensalt();  <span class="comment">// saved in database with each user</span>
+String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-13">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
