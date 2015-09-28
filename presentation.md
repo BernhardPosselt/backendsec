@@ -383,6 +383,10 @@ PHP examples this time (I'm not that familiar with JSP)
 ```
 
 ```php
+<a href="/?value=<?php echo $accountId>">link</a>
+```
+
+```php
 <!-- <?php echo $comment ?> -->
 ```
 
@@ -398,6 +402,12 @@ PHP examples this time (I'm not that familiar with JSP)
 <style><?php echo $accountId></style>
 ```
 
+```javascript
+$('<a>').html(response);  // use text() instead
+```
+
+**Content-Type: text/html; charset=utf-8** for JSON responses
+
 --
 
 ### XSS Prevention
@@ -405,7 +415,7 @@ PHP examples this time (I'm not that familiar with JSP)
 * Escape based on usage
 * Validate URIs for **src** and **href**
 * Do not use dynamic CSS style sheets
-* [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules), too much possibilities
+* [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary), too much possibilities
 * Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
 
 --

@@ -744,10 +744,13 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
     <section class="slide-content"><h3 id="lesser-known-xss-vulnerabilities">Lesser Known XSS Vulnerabilities</h3>
 <p><strong>href</strong>, <strong>src</strong>, <strong>style</strong> and <strong>&lt;style&gt;</strong> allow javascript:alert(&#39;hi&#39;)</p>
 <pre><code class="lang-php">&lt;a href=<span class="string">"&lt;?php echo $accountId&gt;"</span>&gt;link&lt;/a&gt;</code></pre>
+<pre><code class="lang-php">&lt;a href=<span class="string">"/?value=&lt;?php echo $accountId&gt;"</span>&gt;link&lt;/a&gt;</code></pre>
 <pre><code class="lang-php">&lt;!-- <span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$comment</span> <span class="preprocessor">?&gt;</span> --&gt;</code></pre>
 <pre><code class="lang-php">&lt;img src=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
 <pre><code class="lang-php">&lt;img style=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
 <pre><code class="lang-php">&lt;style&gt;<span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span>&gt;&lt;/style&gt;</code></pre>
+<pre><code class="lang-javascript">$(<span class="string">'&lt;a&gt;'</span>).html(response);  <span class="comment">// use text() instead</span></code></pre>
+<p><strong>Content-Type: text/html; charset=utf-8</strong> for JSON responses</p>
 </section>
   </div>
   <div class="slide hidden" id="slide-23">
@@ -756,7 +759,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <li>Escape based on usage</li>
 <li>Validate URIs for <strong>src</strong> and <strong>href</strong></li>
 <li>Do not use dynamic CSS style sheets</li>
-<li><a href="https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules">Consult the prevention sheet</a>, too much possibilities</li>
+<li><a href="https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary">Consult the prevention sheet</a>, too much possibilities</li>
 <li>Use <a href="https://developer.mozilla.org/en-US/docs/Web/Security/CSP">CSP</a></li>
 </ul>
 </section>
