@@ -624,7 +624,7 @@ Apache feature: [Double Extensions](https://www.acunetix.com/websitesecurity/upl
 
 If we don't specify 123 as mime-type, **file.php.123** will be executed as PHP m/
 
-Chrome + IE sniffing: Chrome and IE try to find out the mimetype by parsing the file -> execute code from txt files
+Chrome + IE sniffing: Chrome/IE try to find out the mimetype by parsing the file -> execute code from file.txt
 
 --
 
