@@ -462,6 +462,7 @@ $('<a>').html(response);  // use text() instead
 * Do not use dynamic CSS style sheets
 * [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary), too much possibilities
 * Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
+* [Do not use relative paths in CSS and old Doctypes](http://blog.portswigger.net/2015/02/prssi.html)
 
 --
 
