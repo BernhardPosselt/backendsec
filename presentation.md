@@ -539,7 +539,7 @@ If we don't specify 123 as mime-type, **file.php.123** will be executed as PHP m
 * NodeJS same issue
 * Do not execute anything from the upload directory (no include, require)
 * Use a dumb file upload server (nginx) + research configs
-* Do not require/include anything from the upload directory
+* Webhosting...
 * Disallow special files (.htaccess, [.user.ini](http://php.net/manual/en/configuration.file.per-user.php), web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing
 * Remove executable bits from uploads (644)
 * Set the correct content type when serving the file
@@ -599,8 +599,8 @@ echo $dom->saveXml();
 **libxml_disable_entity_loader** not threadsafe on php-fpm, use [ZendXML](https://github.com/zendframework/ZendXml)
 --
 
-### CSRF
-
+### CSRF Vulnerability
+**Java**:
 ```java
 @RequestMapping("/delete-user")
 public void deleteUser(@RequestParam("user") String user) {
@@ -610,13 +610,31 @@ public void deleteUser(@RequestParam("user") String user) {
 }
 ```
 
-Attack via hidden form
+**PHP**:
+
+```php
+if (isAuthenticated()) {
+  $userService->delete($_POST['user'])
+}
+```
+
+--
+
+### CSRF Attack
+
+Attack via hidden form, include it on a page the user surfs to, e.g. google ads :)
 
 ```xml
 <form action="https://myshop.com/delete-user" method="post">
-<input name="user" value="someuser">
+<input name="user" value="admin">
 </form>
 ```
+
+--
+
+### CSRF Prevention
+
+Generate a token with valid timespan and pass it to client (NO COOKIE!!!), validate token for each request
 
 Spring: CSRF enforced by default since Spring Security 4.0
 
@@ -628,12 +646,12 @@ Spring: CSRF enforced by default since Spring Security 4.0
 <meta name="_csrf_header" content="${_csrf.headerName}"/>
 ```
 
-Beware of CORS with credentials enabled!
+Beware of [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS#Access-Control-Allow-Credentials) with credentials enabled or CSRF all of your API!
 
 --
 
-### Timing Attacks
-
+### Timing Attack Vulnerabilities
+**Java:**
 ```java
 @RequestMapping("/authenticate")
 public void resetPasswordEmail(@RequestParam("user") String user, @RequestParam("pass") String pass) {
@@ -643,32 +661,96 @@ public void resetPasswordEmail(@RequestParam("user") String user, @RequestParam(
 }
 ```
 
-* Same applies to database!
-
-```java
-if (constantEquals(user, "John") && constantEquals(pass, "Passw0rd")) {
+**PHP:**
+```php
+if ($_GET['user'] === 'John' && $_GET['pass'] === 'Passw0rd') {
   // authenticate user
 }
 ```
 
 --
 
-### Password Hashing
+### Timing Attack
+
+```php
+function isStringEqual($a, $b) {
+  if (strlen($a) !== strlen($b)) {
+    return false;
+  }
+
+  for ($i=0; $i<min(strlen($a), strlen($b)); $i++) {
+    if ($a[$i] !== $b[$i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+```
+
+--
+
+### Timing Attack Prevention
+**Constant time string compare algorithms!**
+
+**Java:**
+```java
+if (constantEquals(user, "John") && constantEquals(pass, "Passw0rd")) {
+  // authenticate user
+}
+```
+
+**PHP:**
+```php
+// in PHP 5.6
+if (hash_equals('John', $_GET['user'] && hash_equals('Passw0rd', $_GET['pass']) {
+  // authenticate user
+}
+```
+
+--
+
+### Password Hashing Vulnerability
 
 
+**Java**:
 ```java
 String password = "mypass";
 String hashedPassword = hash(password);
 ```
 
-Rainbow Tables...
+**PHP**:
+```php
+$password = "mypass";
+$hashedPassword = md5($password);
+```
 
-* bcrypt!
+--
 
+### Passwort Hashing Attack
+
+Rainbow Tables, nuf said
+
+--
+
+### Passwort Hashing Attack Prevention
+
+**bcrypt!**
+
+**Java**:
 ```java
 String global_salt = BCrypt.gensalt();  // saved in config
 String salt = BCrypt.gensalt();  // saved in database with each user
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);
+```
+
+**PHP**:
+```php
+// PHP 5.5
+$hashAndSalt = password_hash($password + $globalSalt, PASSWORD_BCRYPT);
+
+if (password_verify($password + $globalSalt, $hashAndSalt)) {
+}
 ```
 
 --

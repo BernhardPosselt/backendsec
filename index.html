@@ -848,7 +848,7 @@ GET /?id=http://myserver/evil</code></pre>
 <li>NodeJS same issue</li>
 <li>Do not execute anything from the upload directory (no include, require)</li>
 <li>Use a dumb file upload server (nginx) + research configs</li>
-<li>Do not require/include anything from the upload directory</li>
+<li>Webhosting...</li>
 <li>Disallow special files (.htaccess, <a href="http://php.net/manual/en/configuration.file.per-user.php">.user.ini</a>, web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing</li>
 <li>Remove executable bits from uploads (644)</li>
 <li>Set the correct content type when serving the file</li>
@@ -896,54 +896,115 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 </section>
   </div>
   <div class="slide hidden" id="slide-33">
-    <section class="slide-content"><h3 id="csrf">CSRF</h3>
+    <section class="slide-content"><h3 id="csrf-vulnerability">CSRF Vulnerability</h3>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
   <span class="keyword">if</span> (isAuthenticated()) {
     userService.delete(user)
   }
 }</code></pre>
-<p>Attack via hidden form</p>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="keyword">if</span> (isAuthenticated()) {
+  <span class="variable">$userService</span>-&gt;delete(<span class="variable">$_POST</span>[<span class="string">'user'</span>])
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-34">
+    <section class="slide-content"><h3 id="csrf-attack">CSRF Attack</h3>
+<p>Attack via hidden form, include it on a page the user surfs to, e.g. google ads :)</p>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">form</span> <span class="attribute">action</span>=<span class="value">"https://myshop.com/delete-user"</span> <span class="attribute">method</span>=<span class="value">"post"</span>&gt;</span>
-<span class="tag">&lt;<span class="title">input</span> <span class="attribute">name</span>=<span class="value">"user"</span> <span class="attribute">value</span>=<span class="value">"someuser"</span>&gt;</span>
+<span class="tag">&lt;<span class="title">input</span> <span class="attribute">name</span>=<span class="value">"user"</span> <span class="attribute">value</span>=<span class="value">"admin"</span>&gt;</span>
 <span class="tag">&lt;/<span class="title">form</span>&gt;</span></code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-35">
+    <section class="slide-content"><h3 id="csrf-prevention">CSRF Prevention</h3>
+<p>Generate a token with valid timespan and pass it to client (NO COOKIE!!!), validate token for each request</p>
 <p>Spring: CSRF enforced by default since Spring Security 4.0</p>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"hidden"</span> <span class="attribute">name</span>=<span class="value">"${_csrf.parameterName}"</span> <span class="attribute">value</span>=<span class="value">"${_csrf.token}"</span>/&gt;</span></code></pre>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"_csrf"</span> <span class="attribute">content</span>=<span class="value">"${_csrf.token}"</span>/&gt;</span>
 <span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"_csrf_header"</span> <span class="attribute">content</span>=<span class="value">"${_csrf.headerName}"</span>/&gt;</span></code></pre>
-<p>Beware of CORS with credentials enabled!</p>
+<p>Beware of <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS#Access-Control-Allow-Credentials">CORS</a> with credentials enabled or CSRF all of your API!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-34">
-    <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
+  <div class="slide hidden" id="slide-36">
+    <section class="slide-content"><h3 id="timing-attack-vulnerabilities">Timing Attack Vulnerabilities</h3>
+<p><strong>Java:</strong></p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
   <span class="keyword">if</span> (user.equals(<span class="string">"John"</span>) &amp;&amp; pass.equals(<span class="string">"Passw0rd"</span>)) {
     <span class="comment">// authenticate user</span>
   }
 }</code></pre>
-<ul>
-<li>Same applies to database!</li>
-</ul>
-<pre><code class="lang-java"><span class="keyword">if</span> (constantEquals(user, <span class="string">"John"</span>) &amp;&amp; constantEquals(pass, <span class="string">"Passw0rd"</span>)) {
+<p><strong>PHP:</strong></p>
+<pre><code class="lang-php"><span class="keyword">if</span> (<span class="variable">$_GET</span>[<span class="string">'user'</span>] === <span class="string">'John'</span> &amp;&amp; <span class="variable">$_GET</span>[<span class="string">'pass'</span>] === <span class="string">'Passw0rd'</span>) {
   <span class="comment">// authenticate user</span>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-35">
-    <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
+  <div class="slide hidden" id="slide-37">
+    <section class="slide-content"><h3 id="timing-attack">Timing Attack</h3>
+<pre><code class="lang-php"><span class="function"><span class="keyword">function</span> <span class="title">isStringEqual</span><span class="params">(<span class="variable">$a</span>, <span class="variable">$b</span>)</span> {</span>
+  <span class="keyword">if</span> (strlen(<span class="variable">$a</span>) !== strlen(<span class="variable">$b</span>)) {
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+  }
+
+  <span class="keyword">for</span> (<span class="variable">$i</span>=<span class="number">0</span>; <span class="variable">$i</span>&lt;min(strlen(<span class="variable">$a</span>), strlen(<span class="variable">$b</span>)); <span class="variable">$i</span>++) {
+    <span class="keyword">if</span> (<span class="variable">$a</span>[<span class="variable">$i</span>] !== <span class="variable">$b</span>[<span class="variable">$i</span>]) {
+      <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+  }
+
+  <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-38">
+    <section class="slide-content"><h3 id="timing-attack-prevention">Timing Attack Prevention</h3>
+<p><strong>Constant time string compare algorithms!</strong></p>
+<p><strong>Java:</strong></p>
+<pre><code class="lang-java"><span class="keyword">if</span> (constantEquals(user, <span class="string">"John"</span>) &amp;&amp; constantEquals(pass, <span class="string">"Passw0rd"</span>)) {
+  <span class="comment">// authenticate user</span>
+}</code></pre>
+<p><strong>PHP:</strong></p>
+<pre><code class="lang-php"><span class="comment">// in PHP 5.6</span>
+<span class="keyword">if</span> (hash_equals(<span class="string">'John'</span>, <span class="variable">$_GET</span>[<span class="string">'user'</span>] &amp;&amp; hash_equals(<span class="string">'Passw0rd'</span>, <span class="variable">$_GET</span>[<span class="string">'pass'</span>]) {
+  <span class="comment">// authenticate user</span>
+}</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-39">
+    <section class="slide-content"><h3 id="password-hashing-vulnerability">Password Hashing Vulnerability</h3>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
-<p>Rainbow Tables...</p>
-<ul>
-<li>bcrypt!</li>
-</ul>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="variable">$password</span> = <span class="string">"mypass"</span>;
+<span class="variable">$hashedPassword</span> = md5(<span class="variable">$password</span>);</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-40">
+    <section class="slide-content"><h3 id="passwort-hashing-attack">Passwort Hashing Attack</h3>
+<p>Rainbow Tables, nuf said</p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-41">
+    <section class="slide-content"><h3 id="passwort-hashing-attack-prevention">Passwort Hashing Attack Prevention</h3>
+<p><strong>bcrypt!</strong></p>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java">String global_salt = BCrypt.gensalt();  <span class="comment">// saved in config</span>
 String salt = BCrypt.gensalt();  <span class="comment">// saved in database with each user</span>
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="comment">// PHP 5.5</span>
+<span class="variable">$hashAndSalt</span> = password_hash(<span class="variable">$password</span> + <span class="variable">$globalSalt</span>, PASSWORD_BCRYPT);
+
+<span class="keyword">if</span> (password_verify(<span class="variable">$password</span> + <span class="variable">$globalSalt</span>, <span class="variable">$hashAndSalt</span>)) {
+}</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-36">
+  <div class="slide hidden" id="slide-42">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
