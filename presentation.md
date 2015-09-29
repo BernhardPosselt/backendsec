@@ -23,12 +23,13 @@ theme: sjaakvandenberg/cleaver-light
 ### What Will Be Covered
 
 * Injection
-* Directory Traversal
+* Directory Traversal + Path Enumeration
 * Host Header Poisoning
 * Cache Poisoning
 * Unvalidated Redirects
 * Clickjacking
 * XSS
+* Unserialize Attacks
 * Session hijacking
 * File Upload
 * XXE
@@ -144,6 +145,44 @@ $path = realpath($_GET['fileName']);  // attention: crashes when path does not e
 if (strpos($path, "/a/valid/directory") === 0) {
   // etc
 }
+```
+
+--
+
+### Path Enumeration Attack
+
+**Java**:
+
+```java
+fileName = (new File(fileName)).getCanonicalPath();
+if (fileName.startsWith("/a/valid/directory")) {
+  // etc
+}
+```
+
+**PHP**:
+
+```php
+$path = realpath($_GET['fileName']);  // attention: crashes when path does not exist, use a lib
+if (strpos($path, "/a/valid/directory") === 0) {
+  // etc
+}
+```
+
+* **GET** /?fileName=../../../../../../../../../../../Users/myuser/Programming/core/3rdparty/sabre/dav/lib/DAV/Browser/assets/sabredav.css
+
+--
+
+### Path Enumeration Prevention
+
+Don't allow relative paths
+
+```php
+$path = str_replace('\\', '/', $path);  // replace windows backslashes
+if (strpos($path, '/../') !== false || strrchr($path, '/') === '/..') {
+   throw new Exception();
+}
+$path = realpath($path);
 ```
 
 --
@@ -400,8 +439,8 @@ PHP examples this time (I'm not that familiar with JSP)
 <img style="<?php echo $accountId>"/>
 ```
 
-```xml
-<img src="uploaded.svg">
+```http
+GET /uploaded.svg
 ```
 
 ```php
@@ -459,6 +498,36 @@ If HSTS is not present the attacker can use [MITM for HTTP redirects](https://ww
 
 More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
 
+--
+
+### Unserialize Vulnerability
+
+```php
+<?php
+class Command {
+    public $name;
+    public function getName() return $this->name;  
+}
+
+$commandClass = unserialize($_POST['command']);
+
+$command->getName();
+```
+
+--
+
+### Unserialize Attack
+Instantiate another class with values which are used in \__destruct and \__wakeup!
+
+Any Framework? Zend? -> upload arbitrary files, execute and include anything
+
+Why? Because they've got classes that do work in their destructor, instantiate those, prefill values and you're done
+
+[More information](https://statuscode.ch/2015/02/diving-into-egroupware/)
+--
+
+### Unserialize Prevention
+**DO NOT UNSERIALIZE USER INPUT**
 --
 
 ### File Upload Vulnerability
@@ -555,9 +624,13 @@ Apache feature: [Double Extensions](https://www.acunetix.com/websitesecurity/upl
 
 If we don't specify 123 as mime-type, **file.php.123** will be executed as PHP m/
 
+Chrome + IE sniffing: Chrome and IE try to find out the mimetype by parsing the file -> execute code from txt files
+
 --
 
 ### File Upload Prevention
+* Use a separate static content server and domain
+* Add  X-Content-Type-Options: nosniff  to prevent content sniffing
 * Generate filename, **NEVER, EVER** use user supplied mime types or names (**$_FILES[‘uploadedfile’][‘name’]:**, **$_FILES[‘uploadedfile’][‘type’]**)
 * NodeJS same issue
 * Do not execute anything from the upload directory (no include, require)
@@ -567,7 +640,6 @@ If we don't specify 123 as mime-type, **file.php.123** will be executed as PHP m
 * Remove executable bits from uploads (644)
 * Set the correct content type when serving the file
 * Disallow SVG (JavaScript can be embedded) and HTML
-* Use a separate static content server and domain
 * [http://nullcandy.com/php-image-upload-security-how-not-to-do-it/](http://nullcandy.com/php-image-upload-security-how-not-to-do-it/)
 --
 
@@ -619,7 +691,7 @@ libxml_disable_entity_loader(false);
 echo $dom->saveXml();
 ```
 
-**libxml_disable_entity_loader** not threadsafe on php-fpm, use [ZendXML](https://github.com/zendframework/ZendXml)
+**libxml_disable_entity_loader** not threadsafe on php-fpm and  PHP &lt;5.6), use [ZendXML](https://github.com/zendframework/ZendXml)
 --
 
 ### CSRF Vulnerability
@@ -651,6 +723,9 @@ Attack via hidden form, include it on a page the user surfs to, e.g. google ads 
 <form action="https://myshop.com/delete-user" method="post">
 <input name="user" value="admin">
 </form>
+<script>
+  document.forms[0].submit();
+</script>
 ```
 
 --
@@ -780,3 +855,4 @@ if (password_verify($password + $globalSalt, $hashAndSalt)) {
 
 ### Resources
 * [OWASP Top 10](https://www.owasp.org/index.php/Top_10_2013-Top_10)
+* [Shocking News in PHP Exploitation](https://www.nds.rub.de/media/hfs/attachments/files/2010/03/hackpra09_fu_esser_php_exploits1.pdf)
