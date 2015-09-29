@@ -187,7 +187,7 @@ $path = realpath($path);
 --
 
 ### Host Header Poisoning Vulnerability
-
+**Java**:
 ```java
 @RequestMapping("/reset-password")
 public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
@@ -195,6 +195,13 @@ public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email"
   String message = "Please go to " + resetUrl + " and enter a new password";
   Mail.send(email, message)
 }
+```
+
+**PHP**:
+```php
+$resetUrl = $_SERVER['SERVER_NAME'] . "/new-password";
+$message = "Please go to " . resetUrl . " and enter a new password";
+mail(email, message);
 ```
 
 --
@@ -223,6 +230,18 @@ Host: myattackdomain.com
 ```http
 POST /reset-password HTTP/1.1
 Host: valid-domain.com:@myattackdomain.com
+```
+
+--
+
+### Host Header Poisoning Attack 2
+```java
+@RequestMapping("/reset-password")
+public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
+  String resetUrl = request.getRequestURL().toString() + "/new-password";
+  String message = "Please go to " + resetUrl + " and enter a new password";
+  Mail.send(email, message)
+}
 ```
 
 ```http

