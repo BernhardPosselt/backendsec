@@ -426,13 +426,36 @@ $('<a>').html(response);  // use text() instead
 
 --
 
-### Session hijacking
+### Session Hijacking Vulnerability
 
-Generally covered by framework
+* Ever seen these URLs: **/some-url?SESSION_ID=1234kj123k12323** ?
+* No secure cookies flag?
+* No HSTS?
 
-* **GET** /some-url?session_id=1234kj123k12323
+--
 
-* https://myshop.com/login?session_id=1234kj123k12323
+### Session Hijacking Attack
+
+Generate url with your session id and send it to the victim:
+
+**https://myshop.com/login?SESSION_ID=1234kj123k12323**
+
+You can now reuse the session
+
+If no secure cookie flag is set you can MITM the cookie
+
+If HSTS is not present the attacker can use [MITM for HTTP redirects](https://www.owasp.org/index.php/HTTP_Strict_Transport_Security#Threats)
+
+--
+
+### Session Hijacking Prevention
+* Session ID should have enough entropy to prevent guessing
+* Regenerate session on login and privilege change
+* Set expiration dates for sessions and cookies
+* Cookie paths
+* HTTPS everywhere (also subdomains)
+* HSTS (includeSubDomains or be vulnerable to [MITM cookies from subdomains](https://www.owasp.org/index.php/HTTP_Strict_Transport_Security#Problems))
+* HTTPS cookies
 
 More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
 
