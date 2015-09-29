@@ -24,8 +24,7 @@ theme: sjaakvandenberg/cleaver-light
 
 * Injection
 * Directory Traversal + Path Enumeration
-* Host Header Poisoning
-* Cache Poisoning
+* Host Header Poisoning + Cache Poisoning
 * Unvalidated Redirects
 * Clickjacking
 * XSS
