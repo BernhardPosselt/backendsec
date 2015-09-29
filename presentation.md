@@ -39,7 +39,7 @@ theme: sjaakvandenberg/cleaver-light
 --
 
 ### Shell Injection Vulnerability
-
+**Java**:
 ```java
 @RequestMapping("/")
 public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
@@ -47,12 +47,17 @@ public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
     Runtime.getRuntime().exec("cat " +  fileName);
   }
 }
+```
+
+**PHP**:
+```php
+shell_exec('cat ' . $_GET['fileName']);
 ```
 
 --
 
 ### Shell Injection Attack
-
+**Java**:
 ```java
 @RequestMapping("/")
 public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
@@ -61,6 +66,12 @@ public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
   }
 }
 ```
+
+**PHP**:
+```php
+shell_exec('cat ' . $_GET['fileName']);
+```
+
 
 * **GET** /?fileName=/a/valid/file;rm -rf /
 
@@ -93,6 +104,7 @@ shell_exec("cat " . escapeshellarg($_GET['fileName']));
 --
 
 ### Directory Traversal Vulnerability
+**Java**:
 
 ```java
 @RequestMapping("/")
@@ -103,11 +115,16 @@ public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
 }
 ```
 
+**PHP**:
+
+```php
+shell_exec("cat " . escapeshellarg($_GET['fileName']));
+```
 
 --
 
 ### Directory Traversal Attack
-
+**Java**:
 ```java
 @RequestMapping("/")
 public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
@@ -117,12 +134,14 @@ public ModelAndView listFiles(@RequestParam("fileName") String fileName) {
 }
 ```
 
+**PHP**:
+
+```php
+shell_exec("cat " . escapeshellarg($_GET['fileName']));
+```
+
 * **GET** /?fileName=/a/valid/directory/../../../etc/passwd
 * **GET** /?fileName=\\a\\valid\\directory\\..\\..\\..\\sensitive.file
-
-```java
-Runtime.getRuntime().exec(new String[]{"cat", "/a/valid/directory/../../../etc/passwd"});
-```
 
 --
 
@@ -207,14 +226,6 @@ mail(email, message);
 --
 
 ### Host Header Poisoning Attack
-```java
-@RequestMapping("/reset-password")
-public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
-  String resetUrl = request.getRequestURL().toString() + "/new-password";
-  String message = "Please go to " + resetUrl + " and enter a new password";
-  Mail.send(email, message)
-}
-```
 
 ```http
 POST /reset-password HTTP/1.1
@@ -232,26 +243,10 @@ POST /reset-password HTTP/1.1
 Host: valid-domain.com:@myattackdomain.com
 ```
 
---
-
-### Host Header Poisoning Attack 2
-```java
-@RequestMapping("/reset-password")
-public void resetPasswordEmail(HttpServletRequest request, @RequestParam("email") String email) {
-  String resetUrl = request.getRequestURL().toString() + "/new-password";
-  String message = "Please go to " + resetUrl + " and enter a new password";
-  Mail.send(email, message)
-}
-```
-
 ```http
 POST /reset-password HTTP/1.1
 Host: valid-domain.com
 X-Forwarded-Host: myattackdomain.com
-```
-
-```java
-String message = "Please go to http://myattackdomain.com/new-password and enter a new password";
 ```
 
 --
@@ -315,6 +310,12 @@ public void redirectTo(@RequestParam("url") String toUrl) {
 }
 ```
 
+**PHP**:
+```php
+header('Location: ' . $_GET['url']);
+exit;
+```
+
 --
 
 ### Unvalidated Redirects Attack
@@ -326,16 +327,18 @@ public void redirectTo(@RequestParam("url") String toUrl) {
 }
 ```
 
+**PHP**:
+```php
+header('Location: ' . $_GET['url']);
+exit;
+```
+
 ```http
 GET /redirect?url=http://myfakeshop.com
 ```
 
 ```http
 GET /redirect?url=http://valid-shop.com:@myfakeshop.com
-```
-
-```java
-return "redirect:http://valid-shop.com:@myfakeshop.com";
 ```
 
 --
@@ -521,8 +524,7 @@ More on [https://www.owasp.org/index.php/Session_Management_Cheat_Sheet](https:/
 
 ### Unserialize Vulnerability
 
-```php
-<?php
+```java
 class Command {
     public $name;
     public function getName() return $this->name;  
@@ -681,6 +683,20 @@ echo $dom->saveXml();
 
 ### XXE Attack
 
+**Java**:
+```java
+DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+Document doc = dBuilder.parse(userSuppliedXml);
+```
+
+**PHP:**
+```php
+$dom = new DomDocument($userSuppliedXml);
+echo $dom->saveXml();
+```
+
+
 ```xml
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE foo [  
@@ -697,7 +713,7 @@ echo $dom->saveXml();
 **Java**:
 ```java
 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-FEATURE = "http://xml.org/sax/features/external-general-entities";
+String FEATURE = "http://xml.org/sax/features/external-general-entities";
 dbf.setFeature(FEATURE, false);
 ```
 
@@ -812,6 +828,7 @@ function isStringEqual($a, $b) {
 
 **Java:**
 ```java
+// method constantEquals has to be implemented by you or a lib
 if (constantEquals(user, "John") && constantEquals(pass, "Passw0rd")) {
   // authenticate user
 }
