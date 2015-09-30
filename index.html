@@ -976,9 +976,7 @@ Document doc = dBuilder.parse(userSuppliedXml);</code></pre>
   </div>
   <div class="slide hidden" id="slide-39">
     <section class="slide-content"><h3 id="xxe-prevention">XXE Prevention</h3>
-<ul>
-<li>Disable XML External Entity Processing!</li>
-</ul>
+<p>Disable XML External Entity Processing! Also for SVGs!</p>
 <p><strong>Java</strong>:</p>
 <pre><code class="lang-java">DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 String FEATURE = <span class="string">"http://xml.org/sax/features/external-general-entities"</span>;

@@ -709,7 +709,7 @@ echo $dom->saveXml();
 
 ### XXE Prevention
 
-* Disable XML External Entity Processing!
+Disable XML External Entity Processing! Also for SVGs!
 
 **Java**:
 ```java
