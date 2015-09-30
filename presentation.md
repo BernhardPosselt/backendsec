@@ -492,6 +492,7 @@ $('<a>').html(response);  // use text() instead
 * Ever seen these URLs: **/some-url?SESSION_ID=1234kj123k12323** ?
 * No secure cookies flag?
 * No HSTS?
+* XSS all the cookies?
 
 --
 
