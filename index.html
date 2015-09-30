@@ -800,13 +800,13 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
     <section class="slide-content"><h3 id="xss-prevention">XSS Prevention</h3>
 <ul>
 <li><strong>Content-Type: application/json; charset=utf-8</strong> for JSON responses</li>
-<li>Have I mentioned SVG? If needed consider serving from a different domain</li>
+<li>Have I mentioned SVG? If needed consider serving from a different domain? What could happen?</li>
 <li>If user supplied HTML is needed, use a whitelist xml parser (why? Did you test for injecting AngularJS directives :D?)</li>
 <li>Escape based on usage</li>
 <li>Whitelist URIs for <strong>src</strong> and <strong>href</strong> (Why? Because &lt;img src=&quot;jav    ascript:alert(&#39;XSS&#39;);&quot;&gt; and tons of other ways)</li>
 <li>Do not use dynamic CSS style sheets</li>
 <li><a href="https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary">Consult the prevention sheet</a>, too much possibilities</li>
-<li>Use <a href="https://developer.mozilla.org/en-US/docs/Web/Security/CSP">CSP</a></li>
+<li>Use <a href="https://developer.mozilla.org/en-US/docs/Web/Security/CSP">CSP</a> (also for your apache)</li>
 <li><a href="http://blog.portswigger.net/2015/02/prssi.html">Do not use relative paths in CSS and old Doctypes</a></li>
 </ul>
 </section>
@@ -833,8 +833,9 @@ response.setHeader(<span class="string">'X-Frame-Options'</span>, <span class="s
     <section class="slide-content"><h3 id="session-hijacking-prevention">Session Hijacking Prevention</h3>
 <ul>
 <li>Session ID should have enough entropy to prevent guessing</li>
-<li>Regenerate session on login and privilege change</li>
 <li>Set expiration dates for sessions and cookies</li>
+<li>Regenerate session on login and privilege change (+ if possible two factor auth)</li>
+<li>Bind session to IP</li>
 <li>Cookie paths</li>
 <li>HTTPS everywhere (also subdomains)</li>
 <li>HSTS (includeSubDomains or be vulnerable to <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security#Problems">MITM cookies from subdomains</a>)</li>

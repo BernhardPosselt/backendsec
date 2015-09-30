@@ -476,13 +476,13 @@ $('<a>').html(response);  // use text() instead
 
 ### XSS Prevention
 * **Content-Type: application/json; charset=utf-8** for JSON responses
-* Have I mentioned SVG? If needed consider serving from a different domain
+* Have I mentioned SVG? If needed consider serving from a different domain? What could happen?
 * If user supplied HTML is needed, use a whitelist xml parser (why? Did you test for injecting AngularJS directives :D?)
 * Escape based on usage
 * Whitelist URIs for **src** and **href** (Why? Because &lt;img src="jav	ascript:alert('XSS');"> and tons of other ways)
 * Do not use dynamic CSS style sheets
 * [Consult the prevention sheet](https://www.owasp.org/index.php/XSS_%28Cross_Site_Scripting%29_Prevention_Cheat_Sheet#XSS_Prevention_Rules_Summary), too much possibilities
-* Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP)
+* Use [CSP](https://developer.mozilla.org/en-US/docs/Web/Security/CSP) (also for your apache)
 * [Do not use relative paths in CSS and old Doctypes](http://blog.portswigger.net/2015/02/prssi.html)
 
 --
@@ -511,8 +511,9 @@ If HSTS is not present the attacker can use [MITM for HTTP redirects](https://ww
 
 ### Session Hijacking Prevention
 * Session ID should have enough entropy to prevent guessing
-* Regenerate session on login and privilege change
 * Set expiration dates for sessions and cookies
+* Regenerate session on login and privilege change (+ if possible two factor auth)
+* Bind session to IP
 * Cookie paths
 * HTTPS everywhere (also subdomains)
 * HSTS (includeSubDomains or be vulnerable to [MITM cookies from subdomains](https://www.owasp.org/index.php/HTTP_Strict_Transport_Security#Problems))
